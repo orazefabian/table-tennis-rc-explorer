@@ -86,7 +86,7 @@
             <th>{$t.colRating}</th>
             <th>{$t.colName}</th>
             <th>{$t.colId}</th>
-            <th>{$t.colLastPlayed}</th>
+            <th class="hide-mobile">{$t.colLastPlayed}</th>
           </tr>
         </thead>
         <tbody>
@@ -95,7 +95,7 @@
               <td class="rating-cell">{player.rating}</td>
               <td class="name-cell">{player.name}</td>
               <td class="id-cell">{player.id}</td>
-              <td class="date-cell">{player.lastPlayed}</td>
+              <td class="date-cell hide-mobile">{player.lastPlayed}</td>
             </tr>
           {/each}
         </tbody>

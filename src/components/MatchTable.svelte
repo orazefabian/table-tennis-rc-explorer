@@ -40,7 +40,7 @@
     <table>
       <thead>
         <tr>
-          <th>{$t.colDate}</th>
+          <th class="hide-mobile">{$t.colDate}</th>
           <th>{$t.colOpponent}</th>
           <th>{$t.colOppRating}</th>
           <th>{$t.colResult}</th>
@@ -52,7 +52,7 @@
       <tbody>
         {#each filtered as match, i (i)}
           <tr class:win={match.result === 'W'} class:loss={match.result === 'L'}>
-            <td class="date-cell">{match.date}</td>
+            <td class="date-cell hide-mobile">{match.date}</td>
             <td class="opponent-cell">
               {#if match.opponentId}
                 <a href="#/player/{match.opponentId}">{match.opponent}</a>

@@ -844,3 +844,136 @@ a:hover {
   color: var(--primary);
   text-decoration: underline;
 }
+
+/* ─── Mobile (≤ 640px) ──────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Header */
+  .header {
+    padding: 0.6rem 1rem;
+  }
+
+  .tagline {
+    display: none;
+  }
+
+  /* Main content */
+  .main {
+    padding: 1.25rem 1rem;
+  }
+
+  /* Search hero */
+  .search-hero {
+    padding: 1.5rem 0 1rem;
+  }
+
+  .search-hero h1 {
+    font-size: 1.5rem;
+  }
+
+  .search-hero p {
+    font-size: 0.95rem;
+  }
+
+  /* Stack search box vertically */
+  .search-box {
+    flex-direction: column;
+  }
+
+  .search-box button {
+    width: 100%;
+  }
+
+  /* Scrollable tabs — no overflow */
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabs button {
+    flex-shrink: 0;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  /* Match controls: stack vertically */
+  .match-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters {
+    flex-direction: column;
+  }
+
+  .filters input {
+    width: 100%;
+  }
+
+  .filters select {
+    width: 100%;
+  }
+
+  /* Compact shared table cells */
+  .table-wrap th,
+  .table-wrap td {
+    padding: 0.5rem 0.6rem;
+  }
+
+  /* Search results table cells */
+  .results-table th,
+  .results-table td {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.88rem;
+  }
+
+  /* Hide mobile-only hidden columns */
+  .hide-mobile {
+    display: none;
+  }
+
+  /* H2H win bar */
+  .win-bar-container {
+    min-width: 70px;
+  }
+
+  /* Event player card */
+  .event-player-name {
+    min-width: unset;
+  }
+
+  /* Event table name column */
+  .player-name-col {
+    min-width: unset;
+  }
+
+  /* History table event cell */
+  .event-cell {
+    max-width: 160px;
+  }
+
+  /* Event table cells */
+  .event-table th,
+  .event-table td {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.88rem;
+  }
+
+  /* Player header */
+  .player-name-rating h1 {
+    font-size: 1.4rem;
+  }
+
+  .big-rating {
+    font-size: 1.1rem;
+  }
+
+  /* Event title */
+  .event-title {
+    font-size: 1.4rem;
+  }
+}
