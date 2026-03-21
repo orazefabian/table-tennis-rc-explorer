@@ -18,7 +18,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each history as entry}
+          {#each history as entry, i (i)}
           <tr>
             <td class="date-cell">{entry.date}</td>
             <td class="event-cell">

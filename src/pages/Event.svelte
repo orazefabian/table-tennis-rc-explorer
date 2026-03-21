@@ -89,7 +89,7 @@
               </tr>
             </thead>
             <tbody>
-              {#each event.matches as match}
+              {#each event.matches as match, i (i)}
                 <tr class={match.result === 'W' ? 'row-win' : 'row-loss'}>
                   <td>
                     <span class="result-badge {match.result === 'W' ? 'win' : 'loss'}">{match.result}</span>

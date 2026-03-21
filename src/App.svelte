@@ -1,5 +1,4 @@
 <script>
-  import { navigate } from './lib/router.js';
   import { lang, t } from './lib/i18n.js';
   import Search from './pages/Search.svelte';
   import Player from './pages/Player.svelte';

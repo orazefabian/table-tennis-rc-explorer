@@ -90,7 +90,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each results as player}
+          {#each results as player (player.id)}
             <tr class="clickable" onclick={() => goToPlayer(player.id)}>
               <td class="rating-cell">{player.rating}</td>
               <td class="name-cell">{player.name}</td>

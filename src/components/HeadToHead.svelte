@@ -49,7 +49,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each sorted as entry}
+          {#each sorted as entry (entry.id || entry.name)}
             <tr>
               <td class="opponent-cell">
                 {#if entry.id}

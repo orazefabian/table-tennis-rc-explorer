@@ -258,7 +258,7 @@ app.get('/api/event/:id', async (req, res) => {
 
     function parseRatingChange(text) {
       const clean = text.replace(/Rating Change/i, '').replace(/\u200B/g, '').replace(/\s+/g, ' ').trim();
-      const m = clean.match(/([\d.]+±[\d.]+)\s*([+−\-])\s*([\d.]+)\s*=\s*([\d.]+(?:±[\d.]+)?)/);
+      const m = clean.match(/([\d.]+±[\d.]+)\s*([+−-])\s*([\d.]+)\s*=\s*([\d.]+(?:±[\d.]+)?)/);
       if (m) {
         const sign = m[2] === '+' ? '+' : '−';
         return { initial: m[1], change: sign + m[3], final: m[4] };

@@ -50,7 +50,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each filtered as match}
+        {#each filtered as match, i (i)}
           <tr class:win={match.result === 'W'} class:loss={match.result === 'L'}>
             <td class="date-cell">{match.date}</td>
             <td class="opponent-cell">
