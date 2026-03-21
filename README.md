@@ -91,25 +91,3 @@ Two GitHub Actions workflows handle quality checks and deployment:
 
 Vercel's built-in GitHub integration is disabled (`vercel.json`) so all deploys go through the tagged workflow exclusively.
 
-### Releasing
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-### Required GitHub Secrets
-
-| Secret | Where to find it |
-|---|---|
-| `VERCEL_TOKEN` | Vercel → Account Settings → Tokens |
-| `VERCEL_ORG_ID` | `.vercel/project.json` after `vercel link` |
-| `VERCEL_PROJECT_ID` | `.vercel/project.json` after `vercel link` |
-
-## Deployment
-
-The app is deployed on Vercel:
-
-- The Vite build output (`dist/`) is served as static files
-- All `/api/*` routes are handled by `api/index.js` as a serverless function
-- All other routes fall through to `index.html` for client-side routing
