@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:all": "concurrently -n server,vite -c blue,green \"node server.js\" \"vite\"",
     "build": "vite build",
     "lint": "eslint src/ api/ server.js --max-warnings=0",
     "server": "node server.js",
@@ -23,6 +24,7 @@
     "@eslint/js": "^10.0.1",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "chart.js": "^4.4.0",
+    "concurrently": "^9.2.1",
     "eslint": "^10.1.0",
     "eslint-plugin-svelte": "^3.16.0",
     "globals": "^17.4.0",
