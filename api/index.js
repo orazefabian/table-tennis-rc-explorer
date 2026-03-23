@@ -264,7 +264,7 @@ app.get('/api/event/:id', async (req, res) => {
             group = { result: 'W', pointChange: cur.text().replace(/\u200B/g, '').trim(), oppRating: '', opponentName: '', opponentId: '', score: '' };
           } else if (cls.includes('LossPointChangeBorder')) {
             group = { result: 'L', pointChange: cur.text().replace(/\u200B/g, '').trim(), oppRating: '', opponentName: '', opponentId: '', score: '' };
-          } else if (group && !group.oppRating && !cls.includes('Border') && !cls.includes('Opponent')) {
+          } else if (group && !group.oppRating && !cls.includes('PointChangeBorder') && !cls.includes('ScoreBorder') && !cls.includes('Opponent')) {
             group.oppRating = cur.text().replace(/\u200B/g, '').trim();
           } else if (group && cls.includes('Opponent')) {
             const a = cur.find('a');
