@@ -3,7 +3,7 @@ import type { RatingChange, EventPlayerMatch, EventDetail, EventPlayerSummary } 
 
 function parseRatingChange(text: string): RatingChange {
   const clean = text.replace(/Rating Change/i, '').replace(/\u200B/g, '').replace(/\s+/g, ' ').trim();
-  const m = clean.match(/([\d.]+±[\d.]+)\s*([+−-])\s*([\d.]+)\s*=\s*([\d.]+(?:±[\d.]+)?)/);
+  const m = clean.match(/([\d.]±[\d.]+)\s*([+−-])\s*([\d.]+)\s*=\s*([\d.]+(?:±[\d.]+)?)/);
   if (m) {
     const sign = m[2] === '+' ? '+' : '−';
     return { initial: m[1], change: sign + m[3], final: m[4] };
@@ -11,7 +11,8 @@ function parseRatingChange(text: string): RatingChange {
   return { initial: '', change: '', final: clean };
 }
 
-function parseMatches(playerLi: cheerio.Cheerio): EventPlayerMatch[] {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseMatches(playerLi: cheerio.Cheerio<any>): EventPlayerMatch[] {
   const matches: EventPlayerMatch[] = [];
   let cur = playerLi.next('li');
   let group: EventPlayerMatch | null = null;

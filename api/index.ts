@@ -24,21 +24,21 @@ if (isRedisConfigured) {
   });
 }
 
-app.get('/api/search', async (req: Request, res: Response) => {
+app.get('/api/search', async (req: Request, res: Response): Promise<void> => {
   try {
-    const raw = (req.query.name || '').trim();
-    if (!raw) return res.json([]);
+    const raw = String(req.query.name || '').trim();
+    if (!raw) { res.json([]); return; }
 
     const tokens = raw.split(/[\s,]+/).filter(Boolean);
 
     if (tokens.length === 1) {
       const url = `${BASE_URL}/PlayerList.php?PlayerName=${encodeURIComponent(tokens[0])}&PlayerSport=Any&SortOrder=Name`;
       const players = parsePlayerRows(await fetchPage(url));
-      return res.json(players);
+      res.json(players); return;
     }
 
     const resultSets = await Promise.all(
-      tokens.map(t => {
+      tokens.map((t: string) => {
         const url = `${BASE_URL}/PlayerList.php?PlayerName=${encodeURIComponent(t)}&PlayerSport=Any&SortOrder=Name`;
         return fetchPage(url).then(parsePlayerRows);
       })
@@ -52,22 +52,22 @@ app.get('/api/search', async (req: Request, res: Response) => {
       }
     }
 
-    const lowerTokens = tokens.map(t => t.toLowerCase());
+    const lowerTokens = tokens.map((t: string) => t.toLowerCase());
     const players = merged.filter(p => {
       const lowerName = p.name.toLowerCase();
-      return lowerTokens.every(t => lowerName.includes(t));
+      return lowerTokens.every((t: string) => lowerName.includes(t));
     });
 
-    return res.json(players);
+    res.json(players);
   } catch (err) {
     console.error('Search error:', err);
     res.status(500).json({ error: (err as Error).message });
   }
 });
 
-app.get('/api/player/:id', async (req: Request, res: Response) => {
+app.get('/api/player/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const url = `${BASE_URL}/PlayerInfo.php?PlayerID=${id}`;
     const html = await fetchPage(url);
     const info = parsePlayerInfo(html, id);
@@ -78,7 +78,7 @@ app.get('/api/player/:id', async (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/player/:id/history', async (req: Request, res: Response) => {
+app.get('/api/player/:id/history', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const url = `${BASE_URL}/PlayerHistory.php?PlayerID=${id}`;
@@ -91,7 +91,7 @@ app.get('/api/player/:id/history', async (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/player/:id/matches', async (req: Request, res: Response) => {
+app.get('/api/player/:id/matches', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const url = `${BASE_URL}/MatchList.php?PlayerID=${id}&PlayerSport=Any`;
@@ -104,16 +104,16 @@ app.get('/api/player/:id/matches', async (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/event/:id', async (req: Request, res: Response) => {
+app.get('/api/event/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
-    const playerId = req.query.playerID as string || '';
+    const id = String(req.params.id);
+    const playerId = req.query.playerID as string;
     const url = `${BASE_URL}/EventDetail.php?EventID=${id}`;
     const html = await fetchPage(url);
     const data = parseEventDetail(html, id, playerId || null);
 
     if ('error' in data) {
-      return res.status(404).json({ error: data.error });
+      res.status(404).json({ error: data.error }); return;
     }
     res.json(data);
   } catch (err) {

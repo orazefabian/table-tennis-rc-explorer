@@ -1,13 +1,11 @@
-import js from '@eslint/js';
 import globals from 'globals';
 import pluginSvelte from 'eslint-plugin-svelte';
 import svelteParser from 'svelte-eslint-parser';
 import tseslint from 'typescript-eslint';
 
 export default [
-  js.configs.recommended,
-  ...pluginSvelte.configs['flat/recommended'],
   ...tseslint.configs.recommended,
+  ...pluginSvelte.configs['flat/recommended'],
   {
     languageOptions: {
       globals: {
@@ -16,9 +14,7 @@ export default [
       },
     },
     rules: {
-      'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
-      'no-undef': 'off',
     },
   },
   {

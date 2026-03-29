@@ -8,7 +8,6 @@
   let loading = $state(true);
   let error = $state('');
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   $effect(() => {
     eventId; playerId;
     loading = true;
