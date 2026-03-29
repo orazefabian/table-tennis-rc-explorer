@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 
@@ -24,7 +24,7 @@ if (isRedisConfigured) {
   });
 }
 
-app.get('/api/search', async (req, res) => {
+app.get('/api/search', async (req: Request, res: Response) => {
   try {
     const raw = (req.query.name || '').trim();
     if (!raw) return res.json([]);
@@ -44,7 +44,7 @@ app.get('/api/search', async (req, res) => {
       })
     );
 
-    const seen = new Set();
+    const seen = new Set<string>();
     const merged = [];
     for (const set of resultSets) {
       for (const p of set) {
@@ -61,11 +61,11 @@ app.get('/api/search', async (req, res) => {
     return res.json(players);
   } catch (err) {
     console.error('Search error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
-app.get('/api/player/:id', async (req, res) => {
+app.get('/api/player/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const url = `${BASE_URL}/PlayerInfo.php?PlayerID=${id}`;
@@ -74,11 +74,11 @@ app.get('/api/player/:id', async (req, res) => {
     res.json(info);
   } catch (err) {
     console.error('Player info error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
-app.get('/api/player/:id/history', async (req, res) => {
+app.get('/api/player/:id/history', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const url = `${BASE_URL}/PlayerHistory.php?PlayerID=${id}`;
@@ -87,11 +87,11 @@ app.get('/api/player/:id/history', async (req, res) => {
     res.json(history);
   } catch (err) {
     console.error('History error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
-app.get('/api/player/:id/matches', async (req, res) => {
+app.get('/api/player/:id/matches', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const url = `${BASE_URL}/MatchList.php?PlayerID=${id}&PlayerSport=Any`;
@@ -100,29 +100,29 @@ app.get('/api/player/:id/matches', async (req, res) => {
     res.json(data);
   } catch (err) {
     console.error('Matches error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
-app.get('/api/event/:id', async (req, res) => {
+app.get('/api/event/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const playerId = req.query.playerID || '';
+    const playerId = req.query.playerID as string || '';
     const url = `${BASE_URL}/EventDetail.php?EventID=${id}`;
     const html = await fetchPage(url);
     const data = parseEventDetail(html, id, playerId || null);
 
-    if (data.error) {
+    if ('error' in data) {
       return res.status(404).json({ error: data.error });
     }
     res.json(data);
   } catch (err) {
     console.error('Event detail error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
-app.get('/api/player/:id/graph', async (req, res) => {
+app.get('/api/player/:id/graph', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const url = `${BASE_URL}/GraphImage.php?PlayerID=${id}`;
@@ -136,7 +136,7 @@ app.get('/api/player/:id/graph', async (req, res) => {
     res.send(Buffer.from(buffer));
   } catch (err) {
     console.error('Graph error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 

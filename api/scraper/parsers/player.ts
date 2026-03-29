@@ -1,8 +1,9 @@
 import * as cheerio from 'cheerio';
+import type { PlayerInfo } from '../types.js';
 
-function parsePlayerInfo(html, id) {
+function parsePlayerInfo(html: string, id: string): PlayerInfo {
   const $ = cheerio.load(html);
-  const info = { id };
+  const info: PlayerInfo = { id, name: '', rating: '' };
 
   const h1 = $('h1.CenteredHeading');
   const nameText = h1.clone().children().remove().end().text().trim();

@@ -1,8 +1,9 @@
 import * as cheerio from 'cheerio';
+import type { RatingHistoryEntry } from '../types.js';
 
-function parsePlayerHistory(html) {
+function parsePlayerHistory(html: string): RatingHistoryEntry[] {
   const $ = cheerio.load(html);
-  const history = [];
+  const history: RatingHistoryEntry[] = [];
 
   $('table.Bordered').first().find('tbody tr').each((_, row) => {
     const cells = $(row).find('td');

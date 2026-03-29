@@ -1,9 +1,10 @@
 import * as cheerio from 'cheerio';
+import type { MatchResult, HeadToHeadEntry, MatchesData } from '../types.js';
 
-function parseMatches(html) {
+function parseMatches(html: string): MatchesData {
   const $ = cheerio.load(html);
-  const matches = [];
-  const h2h = [];
+  const matches: MatchResult[] = [];
+  const h2h: HeadToHeadEntry[] = [];
   const tables = $('table.Bordered');
 
   tables.eq(0).find('tbody tr').each((_, row) => {

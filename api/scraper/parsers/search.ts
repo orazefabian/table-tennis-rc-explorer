@@ -1,8 +1,9 @@
 import * as cheerio from 'cheerio';
+import type { PlayerSearchResult } from '../types.js';
 
-function parsePlayerRows(html) {
+function parsePlayerRows(html: string): PlayerSearchResult[] {
   const $ = cheerio.load(html);
-  const players = [];
+  const players: PlayerSearchResult[] = [];
   $('table.Bordered tbody tr').each((_, row) => {
     const cells = $(row).find('td');
     if (cells.length >= 4) {

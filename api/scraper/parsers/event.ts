@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
+import type { RatingChange, EventPlayer, EventPlayerMatch, EventDetail, EventPlayerSummary } from '../types.js';
 
-function parseRatingChange(text) {
+function parseRatingChange(text: string): RatingChange {
   const clean = text.replace(/Rating Change/i, '').replace(/\u200B/g, '').replace(/\s+/g, ' ').trim();
   const m = clean.match(/([\d.]+±[\d.]+)\s*([+−-])\s*([\d.]+)\s*=\s*([\d.]+(?:±[\d.]+)?)/);
   if (m) {
@@ -10,11 +11,10 @@ function parseRatingChange(text) {
   return { initial: '', change: '', final: clean };
 }
 
-function parseMatches(playerLi) {
-  const $ = cheerio.load(playerLi);
-  const matches = [];
-  let cur = $(playerLi).next('li');
-  let group = null;
+function parseMatches(playerLi: cheerio.Cheerio): EventPlayerMatch[] {
+  const matches: EventPlayerMatch[] = [];
+  let cur = playerLi.next('li');
+  let group: EventPlayerMatch | null = null;
 
   while (cur.length && !cur.hasClass('Gap')) {
     const cls = cur.attr('class') || '';
@@ -44,7 +44,11 @@ function parseMatches(playerLi) {
   return matches;
 }
 
-function parseEventDetail(html, eventId, playerId = null) {
+interface EventDetailError {
+  error: string;
+}
+
+function parseEventDetail(html: string, eventId: string, playerId?: string | null): EventDetail | EventDetailError {
   const $ = cheerio.load(html);
 
   const name = $('h1.CenteredHeading').clone().find('.Subheader').remove().end().text().trim();
@@ -62,14 +66,14 @@ function parseEventDetail(html, eventId, playerId = null) {
     }
 
     const playerName = playerLi.find('a').text().trim();
-    const ratingLi = $(playerLi).nextAll('li').filter((_, l) => $(l).hasClass('RatingBorder')).first();
+    const ratingLi = playerLi.nextAll('li').filter((_, l) => $(l).hasClass('RatingBorder')).first();
     const rc = parseRatingChange(ratingLi.text());
     const matches = parseMatches(playerLi);
 
     return { id: eventId, name, date, player: { id: playerId, name: playerName, ...rc }, matches };
   }
 
-  const players = [];
+  const players: EventPlayerSummary[] = [];
   $('ul.Detailed li.Header.PlayerBorder').each((_, el) => {
     const playerLink = $(el).find('a');
     const playerName = playerLink.text().trim();
