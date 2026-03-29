@@ -9,15 +9,12 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": false,
-    "sourceMap": true,
+    "noEmit": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noFallthroughCasesInSwitch": true
   },
-  "include": ["api/**/*", "server.js"],
-  "exclude": ["node_modules", "dist", "src"]
+  "include": ["api/**/*", "server.ts"],
+  "exclude": ["node_modules", "dist"]
 }
