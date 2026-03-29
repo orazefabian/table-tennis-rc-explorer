@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import type { RatingChange, EventPlayer, EventPlayerMatch, EventDetail, EventPlayerSummary } from '../types.js';
+import type { RatingChange, EventPlayerMatch, EventDetail, EventPlayerSummary } from '../types.js';
 
 function parseRatingChange(text: string): RatingChange {
   const clean = text.replace(/Rating Change/i, '').replace(/\u200B/g, '').replace(/\s+/g, ' ').trim();

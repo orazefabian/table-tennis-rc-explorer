@@ -36,6 +36,7 @@
     loading = false;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   $effect(() => {
     playerId;
     loadData();
