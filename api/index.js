@@ -9,12 +9,20 @@ import {
   parsePlayerInfo,
   parsePlayerHistory,
   parseMatches,
-  parseEventDetail
+  parseEventDetail,
+  isRedisConfigured,
+  initRedis
 } from './scraper/index.js';
 
 const app = express();
 
 app.use(cors());
+
+if (isRedisConfigured) {
+  initRedis().then(() => {
+    console.log('Redis cache initialized');
+  });
+}
 
 app.get('/api/search', async (req, res) => {
   try {

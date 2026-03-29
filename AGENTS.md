@@ -12,13 +12,31 @@ All data is scraped from [Ratings Central](https://www.ratingscentral.com) using
 - `EventDetail.php` - Event details
 - `GraphImage.php` - Rating graph images
 
-An in-memory cache with 5-minute TTL reduces redundant scraping.
+### Caching
+- **Local dev**: In-memory Map with 5-minute TTL
+- **Production (Vercel)**: Optional Redis (Upstash) via `REDIS_URL` env var
+- Cache TTL configurable via `CACHE_TTL` env var (default: 300000ms)
 
 ## Architecture
 
 ### Backend (Express + Cheerio)
 - **`server.js`** - Local development server (port 3001)
-- **`api/index.js`** - Same Express app exported for Vercel serverless
+- **`api/index.js`** - Express app exported for Vercel serverless
+- **`api/scraper/`** - Shared scraping logic (cache, fetcher, parsers)
+
+#### Scraping Module Structure
+```
+api/scraper/
+├── index.js       # Main exports + BASE_URL
+├── cache.js       # Caching (in-memory or Redis)
+├── fetcher.js     # HTTP fetching
+└── parsers/
+    ├── search.js  # Player search parsing
+    ├── player.js  # Player info parsing
+    ├── history.js # Rating history parsing
+    ├── matches.js # Match results + H2H parsing
+    └── event.js   # Event detail parsing
+```
 
 API Endpoints:
 | Endpoint | Description |
@@ -77,3 +95,4 @@ API Endpoints:
 - i18n via Svelte stores with EN/DE translations
 - In-memory caching (5 min TTL) for scraped pages
 - Cheerio selectors target `.Bordered` tables and `.Detailed` lists from Ratings Central HTML
+- All scraping logic centralized in `api/scraper/` module

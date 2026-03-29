@@ -1,19 +1,74 @@
-const cache = new Map();
-const CACHE_TTL = 5 * 60 * 1000;
+const CACHE_TTL = parseInt(process.env.CACHE_TTL || '300000', 10);
+const REDIS_URL = process.env.REDIS_URL || null;
 
-function getCached(key) {
-  const entry = cache.get(key);
+let cache;
+let redisClient = null;
+
+async function initRedis() {
+  if (!REDIS_URL) return null;
+  try {
+    const { Redis } = await import('@upstash/redis');
+    redisClient = new Redis({ url: REDIS_URL, token: process.env.REDIS_TOKEN });
+    return redisClient;
+  } catch (e) {
+    console.warn('Redis init failed:', e.message);
+    return null;
+  }
+}
+
+function getInMemoryCache() {
+  if (!cache) {
+    cache = new Map();
+  }
+  return cache;
+}
+
+async function getCached(key) {
+  if (redisClient) {
+    try {
+      const data = await redisClient.get(key);
+      if (data) return data;
+    } catch (e) {
+      console.warn('Redis get failed:', e.message);
+    }
+    return null;
+  }
+
+  const mem = getInMemoryCache();
+  const entry = mem.get(key);
   if (entry && Date.now() - entry.ts < CACHE_TTL) return entry.data;
-  cache.delete(key);
+  mem.delete(key);
   return null;
 }
 
-function setCache(key, data) {
-  cache.set(key, { data, ts: Date.now() });
+async function setCache(key, data) {
+  if (redisClient) {
+    try {
+      await redisClient.set(key, data, { ex: Math.floor(CACHE_TTL / 1000) });
+    } catch (e) {
+      console.warn('Redis set failed:', e.message);
+    }
+    return;
+  }
+
+  const mem = getInMemoryCache();
+  mem.set(key, { data, ts: Date.now() });
 }
 
-function clearCache() {
-  cache.clear();
+async function clearCache() {
+  if (redisClient) {
+    try {
+      await redisClient.flushdb();
+    } catch (e) {
+      console.warn('Redis clear failed:', e.message);
+    }
+    return;
+  }
+
+  const mem = getInMemoryCache();
+  mem.clear();
 }
 
-export { getCached, setCache, clearCache, CACHE_TTL };
+const isRedisConfigured = !!REDIS_URL;
+
+export { getCached, setCache, clearCache, CACHE_TTL, isRedisConfigured, initRedis };
