@@ -1,7 +1,7 @@
 import { writable, derived } from 'svelte/store';
 
 const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('lang') : null;
-export const lang = writable(stored === 'de' ? 'de' : 'en');
+export const lang = writable(stored === 'en' ? 'en' : 'de');
 
 // Persist to localStorage whenever it changes
 lang.subscribe(l => {
