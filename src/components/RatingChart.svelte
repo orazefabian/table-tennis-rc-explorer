@@ -76,7 +76,7 @@
       },
       options: {
         responsive: true,
-        maintainAspectRatio: !fullHeight,
+        maintainAspectRatio: false,
         interaction: {
           mode: 'index',
           intersect: false,

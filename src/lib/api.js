@@ -30,3 +30,9 @@ export async function getEventDetails(eventId, playerId) {
   if (!res.ok) throw new Error('Failed to load event details');
   return res.json();
 }
+
+export async function getEventNames(eventIds) {
+  const res = await fetch(`${BASE}/events/names?ids=${eventIds.join(',')}`);
+  if (!res.ok) throw new Error('Failed to load event names');
+  return res.json();
+}

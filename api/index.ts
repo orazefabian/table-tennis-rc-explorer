@@ -10,6 +10,7 @@ import {
   parsePlayerHistory,
   parseMatches,
   parseEventDetail,
+  parseEventName,
   isRedisConfigured,
   initRedis
 } from './scraper/index.js';
@@ -100,6 +101,33 @@ app.get('/api/player/:id/matches', async (req: Request, res: Response): Promise<
     res.json(data);
   } catch (err) {
     console.error('Matches error:', err);
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/events/names', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const eventIds = req.query.ids as string;
+    if (!eventIds) { res.json({}); return; }
+
+    const ids = eventIds.split(',').filter(Boolean);
+    const cache: Record<string, string> = {};
+
+    await Promise.all(
+      ids.map(async (eventId) => {
+        try {
+          const eventUrl = `${BASE_URL}/EventDetail.php?EventID=${eventId}`;
+          const eventHtml = await fetchPage(eventUrl);
+          cache[eventId] = parseEventName(eventHtml);
+        } catch {
+          cache[eventId] = `Event ${eventId}`;
+        }
+      })
+    );
+
+    res.json(cache);
+  } catch (err) {
+    console.error('Event names error:', err);
     res.status(500).json({ error: (err as Error).message });
   }
 });

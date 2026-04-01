@@ -48,4 +48,9 @@ function parseMatches(html: string): MatchesData {
   return { matches, headToHead: h2h };
 }
 
-export { parseMatches };
+function parseEventName(html: string): string {
+  const $ = cheerio.load(html);
+  return $('h1.CenteredHeading').clone().find('.Subheader').remove().end().text().trim();
+}
+
+export { parseMatches, parseEventName };

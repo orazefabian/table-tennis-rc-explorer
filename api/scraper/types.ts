@@ -29,6 +29,7 @@ export interface RatingHistoryEntry {
 export interface MatchResult {
   date: string;
   eventId: string;
+  eventName?: string;
   opponent: string;
   opponentId: string;
   opponentRating: string;

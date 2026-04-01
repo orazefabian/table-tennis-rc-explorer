@@ -6,6 +6,7 @@
   import HistoryTable from '../components/HistoryTable.svelte';
   import MatchTable from '../components/MatchTable.svelte';
   import HeadToHead from '../components/HeadToHead.svelte';
+  import SeasonStats from '../components/SeasonStats.svelte';
 
   let { playerId } = $props();
 
@@ -83,6 +84,7 @@
 
     <nav class="tabs">
       <button class:active={activeTab === 'overview'} onclick={() => activeTab = 'overview'}>{$t.tabOverview}</button>
+      <button class:active={activeTab === 'season'} onclick={() => activeTab = 'season'}>{$t.tabSeason}</button>
       <button class:active={activeTab === 'history'} onclick={() => activeTab = 'history'}>{$t.tabHistory}</button>
       <button class:active={activeTab === 'matches'} onclick={() => activeTab = 'matches'}>{$t.tabMatches}</button>
       <button class:active={activeTab === 'h2h'} onclick={() => activeTab = 'h2h'}>{$t.tabH2H}</button>
@@ -125,6 +127,8 @@
             <HistoryTable history={history.slice(0, 5)} compact playerId={player.id} />
           </div>
         </div>
+      {:else if activeTab === 'season'}
+        <SeasonStats {matches} {playerId} currentRating={player.rating} />
       {:else if activeTab === 'history'}
         <div class="history-tab">
           <div class="chart-section">

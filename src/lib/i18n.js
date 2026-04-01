@@ -33,6 +33,7 @@ const translations = {
     backToSearch: '← Back to Search',
     loadingPlayer: 'Loading player data…',
     tabOverview: 'Overview',
+    tabSeason: 'Season',
     tabHistory: 'Rating History',
     tabMatches: 'Matches',
     tabH2H: 'Head-to-Head',
@@ -45,6 +46,16 @@ const translations = {
     statHighestRating: 'Highest Rating',
     statLowestRating: 'Lowest Rating',
     cardRecentEvents: 'Recent Events',
+
+    // Season tab
+    seasonTitle: 'Season Statistics',
+    seasonSelect: 'Select Season',
+    seasonRecord: 'Record',
+    seasonSets: 'Sets',
+    seasonPoints: 'Points',
+    seasonNoMatches: 'No matches in this season',
+    seasonFrom: 'From',
+    seasonTo: 'To',
 
     // Event page
     back: '← Back',
@@ -116,6 +127,7 @@ const translations = {
     backToSearch: '← Zurück zur Suche',
     loadingPlayer: 'Spielerdaten werden geladen…',
     tabOverview: 'Übersicht',
+    tabSeason: 'Saison',
     tabHistory: 'Wertungsverlauf',
     tabMatches: 'Spiele',
     tabH2H: 'Direkte Duelle',
@@ -128,6 +140,16 @@ const translations = {
     statHighestRating: 'Höchste Wertung',
     statLowestRating: 'Niedrigste Wertung',
     cardRecentEvents: 'Letzte Turniere',
+
+    // Season tab
+    seasonTitle: 'Saison-Statistik',
+    seasonSelect: 'Saison wählen',
+    seasonRecord: 'Bilanz',
+    seasonSets: 'Sätze',
+    seasonPoints: 'Punkte',
+    seasonNoMatches: 'Keine Spiele in dieser Saison',
+    seasonFrom: 'Von',
+    seasonTo: 'Bis',
 
     // Event page
     back: '← Zurück',
