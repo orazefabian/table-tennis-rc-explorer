@@ -103,51 +103,6 @@
     return `${formatDate(start)} - ${formatDate(end)}`;
   });
 
-  let tournamentGroups = $derived.by(() => {
-    const groups = new SvelteMap();
-    for (const m of seasonMatches) {
-      const key = m.eventId || 'unknown';
-      if (!groups.has(key)) {
-        groups.set(key, {
-          eventId: key,
-          eventName: m._eventName || `Event ${key}`,
-          matches: [],
-          wins: 0,
-          losses: 0,
-          setsWon: 0,
-          setsLost: 0,
-          totalPointChange: 0,
-        });
-      }
-      const g = groups.get(key);
-      g.matches.push(m);
-      if (m.result === 'W') g.wins++;
-      else g.losses++;
-
-      const score = m.score || '';
-      const normalized = score.replace(/[–—]/g, '-').replace(/\s/g, '');
-      const parts = normalized.split('-');
-      if (parts.length === 2 && parts[0] && parts[1]) {
-        const first = parseInt(parts[0], 10);
-        const second = parseInt(parts[1], 10);
-        if (!isNaN(first) && !isNaN(second)) {
-          if (m.result === 'W') {
-            g.setsWon += first;
-            g.setsLost += second;
-          } else {
-            g.setsWon += second;
-            g.setsLost += first;
-          }
-        }
-      }
-    }
-    return [...groups.values()].sort((a, b) => {
-      const aDate = a.matches[0]?._date?.getTime() || 0;
-      const bDate = b.matches[0]?._date?.getTime() || 0;
-      return bDate - aDate;
-    });
-  });
-
   let prefixGroups = $derived.by(() => {
     const groups = new SvelteMap();
     for (const m of seasonMatches) {
@@ -169,19 +124,14 @@
       else g.losses++;
 
       const score = m.score || '';
-      const normalized = score.replace(/[–—]/g, '-').replace(/\s/g, '');
-      const parts = normalized.split('-');
-      if (parts.length === 2 && parts[0] && parts[1]) {
+      const normalized = score.replace(/[–—]/g, '-');
+      const parts = normalized.split('-').filter(p => p.trim());
+      if (parts.length === 2) {
         const first = parseInt(parts[0], 10);
         const second = parseInt(parts[1], 10);
         if (!isNaN(first) && !isNaN(second)) {
-          if (m.result === 'W') {
-            g.setsWon += first;
-            g.setsLost += second;
-          } else {
-            g.setsWon += second;
-            g.setsLost += first;
-          }
+          g.setsWon += first;
+          g.setsLost += second;
         }
       }
 
@@ -204,14 +154,13 @@
   let totalSetsWon = $derived.by(() => {
     let sum = 0;
     for (const m of seasonMatches) {
-      const normalized = (m.score || '').replace(/[–—]/g, '-').replace(/\s/g, '');
-      const parts = normalized.split('-');
-      if (parts.length === 2 && parts[0] && parts[1]) {
+      const normalized = (m.score || '').replace(/[–—]/g, '-');
+      const parts = normalized.split('-').filter(p => p.trim());
+      if (parts.length === 2) {
         const first = parseInt(parts[0], 10);
         const second = parseInt(parts[1], 10);
         if (!isNaN(first) && !isNaN(second)) {
-          if (m.result === 'W') sum += first;
-          else sum += second;
+          sum += first;
         }
       }
     }
@@ -220,14 +169,13 @@
   let totalSetsLost = $derived.by(() => {
     let sum = 0;
     for (const m of seasonMatches) {
-      const normalized = (m.score || '').replace(/[–—]/g, '-').replace(/\s/g, '');
-      const parts = normalized.split('-');
-      if (parts.length === 2 && parts[0] && parts[1]) {
+      const normalized = (m.score || '').replace(/[–—]/g, '-');
+      const parts = normalized.split('-').filter(p => p.trim());
+      if (parts.length === 2) {
         const first = parseInt(parts[0], 10);
         const second = parseInt(parts[1], 10);
         if (!isNaN(first) && !isNaN(second)) {
-          if (m.result === 'W') sum += second;
-          else sum += first;
+          sum += second;
         }
       }
     }

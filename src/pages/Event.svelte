@@ -54,7 +54,7 @@
         </div>
         <div class="event-stat">
           <span class="event-stat-label">{$t.statChange}</span>
-          <span class="event-stat-value mono {event.player.change.startsWith('+') ? 'positive' : 'negative'}">{event.player.change}</span>
+          <span class="event-stat-value mono {event.player.change.startsWith('+') ? 'positive' : event.player.change.startsWith('−') || event.player.change.startsWith('-') ? 'negative' : ''}">{event.player.change}</span>
         </div>
         <div class="event-stat">
           <span class="event-stat-label">{$t.statFinal}</span>

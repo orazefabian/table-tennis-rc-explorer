@@ -32,7 +32,7 @@ function parseMatches(playerLi: cheerio.Cheerio<any>): EventPlayerMatch[] {
         const a = cur.find('a');
         group.opponentName = a.text().trim() || cur.text().trim();
         const href = a.attr('href') || '';
-        const idM = href.match(/P(\d+)/);
+        const idM = href.match(/PlayerID=(\d+)/);
         group.opponentId = idM ? idM[1] : '';
       } else if (group && (cls.includes('WinScoreBorder') || cls.includes('LossScoreBorder'))) {
         group.score = cur.text().replace(/\u200B/g, '').trim();
