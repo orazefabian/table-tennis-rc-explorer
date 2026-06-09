@@ -2,6 +2,7 @@
   import { navigate } from '../lib/router.js';
   import { t } from '../lib/i18n.js';
   import { getPlayerInfo, getPlayerHistory, getPlayerMatches } from '../lib/api.js';
+  import { parseRating } from '../lib/utils.js';
   import RatingChart from '../components/RatingChart.svelte';
   import HistoryTable from '../components/HistoryTable.svelte';
   import MatchTable from '../components/MatchTable.svelte';
@@ -44,11 +45,6 @@
 
   function goBack() {
     navigate('/search');
-  }
-
-  function parseRating(r) {
-    const m = r.match(/([\d.]+)/);
-    return m ? parseFloat(m[1]) : 0;
   }
 
   function getMaxRating(h) {

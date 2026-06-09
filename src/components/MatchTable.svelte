@@ -1,5 +1,6 @@
 <script>
   import { t } from '../lib/i18n.js';
+  import { classifyChange } from '../lib/utils.js';
   let { matches = [] } = $props();
 
   let filterOpponent = $state('');
@@ -9,7 +10,7 @@
     matches.filter(m => {
       if (filterResult === 'wins' && m.result !== 'W') return false;
       if (filterResult === 'losses' && m.result !== 'L') return false;
-      if (filterOpponent && !m.opponent.toLowerCase().includes(filterOpponent.toLowerCase())) return false;
+      if (filterOpponent && !m.opponent?.toLowerCase().includes(filterOpponent.toLowerCase())) return false;
       return true;
     })
   );
@@ -67,7 +68,7 @@
               </span>
             </td>
             <td class="rating-cell">{match.rating}</td>
-            <td class="change-cell" class:positive={match.pointChange.startsWith('+')} class:negative={match.pointChange.startsWith('−') || match.pointChange.startsWith('-')}>
+            <td class="change-cell" class:positive={classifyChange(match.pointChange) === 'positive'} class:negative={classifyChange(match.pointChange) === 'negative'}>
               {match.pointChange}
             </td>
             <td class="score-cell">{match.score}</td>
