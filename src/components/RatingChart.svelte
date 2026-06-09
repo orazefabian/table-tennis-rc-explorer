@@ -3,18 +3,15 @@
   import { get } from 'svelte/store';
   import Chart from 'chart.js/auto';
   import { t } from '../lib/i18n.js';
+  import { parseRating } from '../lib/utils.js';
 
   let { history = [], fullHeight = false } = $props();
 
   let canvas = $state();
   let chart;
 
-  function parseRating(s) {
-    const m = s.match(/([\d.]+)/);
-    return m ? parseFloat(m[1]) : 0;
-  }
-
   function parseStdev(s) {
+    if (!s) return 0;
     const m = s.match(/±([\d.]+)/);
     return m ? parseFloat(m[1]) : 0;
   }

@@ -1,26 +1,27 @@
 <script>
-  import { t } from '../lib/i18n.js';
+  import { t, lang } from '../lib/i18n.js';
   import { getEventNames } from '../lib/api.js';
+  import { parseScore } from '../lib/utils.js';
   import { SvelteSet } from 'svelte/reactivity';
   import { SvelteMap } from 'svelte/reactivity';
 
   let { matches = [], playerId, currentRating: playerCurrentRating } = $props();
 
   let eventNames = $state({});
-  let loadingNames = $state(false);
+
+  // Request ID prevents a slower in-flight response from overwriting a newer one.
+  let nameRequestId = 0;
 
   async function loadEventNames() {
     const uniqueIds = [...new Set(matches.map(m => m.eventId).filter(Boolean))];
-    if (uniqueIds.length === 0) return;
-    
-    loadingNames = true;
+    if (uniqueIds.length === 0) { eventNames = {}; return; }
+    const thisId = ++nameRequestId;
     try {
       const names = await getEventNames(uniqueIds);
-      eventNames = names;
+      if (thisId === nameRequestId) eventNames = names;
     } catch (e) {
       console.error('Failed to load event names:', e);
     }
-    loadingNames = false;
   }
 
   $effect(() => {
@@ -82,13 +83,17 @@
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
   const currentSeasonStart = currentMonth >= 8 ? currentYear : currentYear - 1;
-  let selectedSeason = $state(getSeasonLabel(currentSeasonStart));
 
-  $effect(() => {
-    if (availableSeasons.length > 0 && !availableSeasons.includes(selectedSeason)) {
-      selectedSeason = availableSeasons[0];
-    }
-  });
+  // Tracks the user's explicit dropdown choice; null means "use the most recent".
+  let userSelectedSeason = $state(null);
+
+  // Always resolves to a valid season: respects user choice if still available,
+  // otherwise falls back to the most recent available season.
+  let selectedSeason = $derived(
+    userSelectedSeason && availableSeasons.includes(userSelectedSeason)
+      ? userSelectedSeason
+      : (availableSeasons[0] ?? getSeasonLabel(currentSeasonStart))
+  );
 
   let seasonMatches = $derived.by(() => {
     const { start, end } = getSeasonRange(selectedSeason);
@@ -97,9 +102,8 @@
 
   let seasonDateRange = $derived.by(() => {
     const { start, end } = getSeasonRange(selectedSeason);
-    const formatDate = (d) => {
-      return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    };
+    const locale = $lang === 'en' ? 'en-US' : 'de-DE';
+    const formatDate = (d) => d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
     return `${formatDate(start)} - ${formatDate(end)}`;
   });
 
@@ -123,16 +127,10 @@
       if (m.result === 'W') g.wins++;
       else g.losses++;
 
-      const score = m.score || '';
-      const normalized = score.replace(/[–—]/g, '-');
-      const parts = normalized.split('-').filter(p => p.trim());
-      if (parts.length === 2) {
-        const first = parseInt(parts[0], 10);
-        const second = parseInt(parts[1], 10);
-        if (!isNaN(first) && !isNaN(second)) {
-          g.setsWon += first;
-          g.setsLost += second;
-        }
+      const score = parseScore(m.score);
+      if (score) {
+        g.setsWon += score.setsWon;
+        g.setsLost += score.setsLost;
       }
 
       const pc = m.pointChange || '';
@@ -154,30 +152,16 @@
   let totalSetsWon = $derived.by(() => {
     let sum = 0;
     for (const m of seasonMatches) {
-      const normalized = (m.score || '').replace(/[–—]/g, '-');
-      const parts = normalized.split('-').filter(p => p.trim());
-      if (parts.length === 2) {
-        const first = parseInt(parts[0], 10);
-        const second = parseInt(parts[1], 10);
-        if (!isNaN(first) && !isNaN(second)) {
-          sum += first;
-        }
-      }
+      const score = parseScore(m.score);
+      if (score) sum += score.setsWon;
     }
     return sum;
   });
   let totalSetsLost = $derived.by(() => {
     let sum = 0;
     for (const m of seasonMatches) {
-      const normalized = (m.score || '').replace(/[–—]/g, '-');
-      const parts = normalized.split('-').filter(p => p.trim());
-      if (parts.length === 2) {
-        const first = parseInt(parts[0], 10);
-        const second = parseInt(parts[1], 10);
-        if (!isNaN(first) && !isNaN(second)) {
-          sum += second;
-        }
-      }
+      const score = parseScore(m.score);
+      if (score) sum += score.setsLost;
     }
     return sum;
   });
@@ -226,7 +210,7 @@
   {#if availableSeasons.length > 0}
     <div class="season-header">
       <h3>{$t.seasonTitle}</h3>
-      <select bind:value={selectedSeason}>
+      <select value={selectedSeason} onchange={(e) => userSelectedSeason = e.currentTarget.value}>
         {#each availableSeasons as season (season)}
           <option value={season}>{season}</option>
         {/each}
@@ -262,37 +246,31 @@
         {/if}
       </div>
 
-      {#if loadingNames}
-        <div class="loading-spinner">
-          <div class="spinner"></div>
-        </div>
-      {:else}
-        <div class="tournament-cards">
-          {#each prefixGroups as group (group.name)}
-            <div class="tournament-card">
-              <div class="card-header">
-                <h4 class="event-name">{group.name}</h4>
-              </div>
-              <div class="card-stats">
-                <div class="stat">
-                  <span class="stat-label">{$t.seasonRecord}</span>
-                  <span class="stat-value">{group.wins}W - {group.losses}L</span>
-                </div>
-                <div class="stat">
-                  <span class="stat-label">{$t.seasonSets}</span>
-                  <span class="stat-value">{group.setsWon}:{group.setsLost}</span>
-                </div>
-                {#if group.totalPointChange !== 0}
-                  <div class="stat">
-                    <span class="stat-label">{$t.seasonPoints}</span>
-                    <span class="stat-value" class:positive={group.totalPointChange > 0} class:negative={group.totalPointChange < 0}>{group.totalPointChange > 0 ? '+' : ''}{group.totalPointChange}</span>
-                  </div>
-                {/if}
-              </div>
+      <div class="tournament-cards">
+        {#each prefixGroups as group (group.name)}
+          <div class="tournament-card">
+            <div class="card-header">
+              <h4 class="event-name">{group.name}</h4>
             </div>
-          {/each}
-        </div>
-      {/if}
+            <div class="card-stats">
+              <div class="stat">
+                <span class="stat-label">{$t.seasonRecord}</span>
+                <span class="stat-value">{group.wins}W - {group.losses}L</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">{$t.seasonSets}</span>
+                <span class="stat-value">{group.setsWon}:{group.setsLost}</span>
+              </div>
+              {#if group.totalPointChange !== 0}
+                <div class="stat">
+                  <span class="stat-label">{$t.seasonPoints}</span>
+                  <span class="stat-value" class:positive={group.totalPointChange > 0} class:negative={group.totalPointChange < 0}>{group.totalPointChange > 0 ? '+' : ''}{group.totalPointChange}</span>
+                </div>
+              {/if}
+            </div>
+          </div>
+        {/each}
+      </div>
     {:else}
       <div class="empty">{$t.seasonNoMatches}</div>
     {/if}
@@ -477,22 +455,5 @@
     color: var(--text-secondary, #888);
   }
 
-  .loading-spinner {
-    display: flex;
-    justify-content: center;
-    padding: 3rem;
-  }
 
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid var(--border-color, #e5e5e5);
-    border-top-color: var(--primary-color, #3b82f6);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
 </style>

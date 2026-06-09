@@ -1,5 +1,6 @@
 <script>
   import { t } from '../lib/i18n.js';
+  import { classifyChange } from '../lib/utils.js';
   let { history = [], compact = false, playerId = '' } = $props();
 </script>
 
@@ -29,7 +30,7 @@
               {/if}
             </td>
             <td class="rating-cell">{entry.initialRating}</td>
-            <td class="change-cell" class:positive={entry.change.startsWith('+')} class:negative={entry.change.startsWith('−') || entry.change.startsWith('-')}>
+            <td class="change-cell" class:positive={classifyChange(entry.change) === 'positive'} class:negative={classifyChange(entry.change) === 'negative'}>
               {entry.change}
             </td>
             <td class="rating-cell">{entry.finalRating}</td>

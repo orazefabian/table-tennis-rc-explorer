@@ -1,6 +1,7 @@
 <script>
   import { getEventDetails } from '../lib/api.js';
   import { t } from '../lib/i18n.js';
+  import { classifyChange } from '../lib/utils.js';
 
   let { eventId, playerId } = $props();
 
@@ -10,13 +11,15 @@
 
   $effect(() => {
     eventId; playerId;
+    let cancelled = false;
     loading = true;
     error = '';
     event = null;
     getEventDetails(eventId, playerId)
-      .then(data => { event = data; })
-      .catch(e => { error = e.message; })
-      .finally(() => { loading = false; });
+      .then(data => { if (!cancelled) event = data; })
+      .catch(e => { if (!cancelled) error = e.message; })
+      .finally(() => { if (!cancelled) loading = false; });
+    return () => { cancelled = true; };
   });
 
   function goBack() {
@@ -24,8 +27,8 @@
     else window.location.hash = '/search';
   }
 
-  function wins() { return event?.matches?.filter(m => m.result === 'W').length ?? 0; }
-  function losses() { return event?.matches?.filter(m => m.result === 'L').length ?? 0; }
+  let wins = $derived(event?.matches?.filter(m => m.result === 'W').length ?? 0);
+  let losses = $derived(event?.matches?.filter(m => m.result === 'L').length ?? 0);
 </script>
 
 <div class="event-page">
@@ -54,7 +57,7 @@
         </div>
         <div class="event-stat">
           <span class="event-stat-label">{$t.statChange}</span>
-          <span class="event-stat-value mono {event.player.change.startsWith('+') ? 'positive' : event.player.change.startsWith('−') || event.player.change.startsWith('-') ? 'negative' : ''}">{event.player.change}</span>
+          <span class="event-stat-value mono {classifyChange(event.player.change)}">{event.player.change}</span>
         </div>
         <div class="event-stat">
           <span class="event-stat-label">{$t.statFinal}</span>
@@ -63,15 +66,15 @@
         <div class="event-stat">
           <span class="event-stat-label">{$t.statRecord}</span>
           <span class="event-stat-value">
-            <span class="positive">{wins()}W</span>
+            <span class="positive">{wins}W</span>
             &thinsp;/&thinsp;
-            <span class="negative">{losses()}L</span>
+            <span class="negative">{losses}L</span>
           </span>
         </div>
       </div>
     </div>
 
-    {#if event.matches.length > 0}
+    {#if event.matches?.length > 0}
       <div class="event-results-card">
         <div class="event-results-meta">
           <span class="event-results-label">{$t.matches}</span>
@@ -102,7 +105,7 @@
                     {/if}
                   </td>
                   <td class="rating-col mono">{match.oppRating}</td>
-                  <td class="change-col mono {match.pointChange.startsWith('+') ? 'positive' : match.pointChange.startsWith('−') || match.pointChange.startsWith('-') ? 'negative' : ''}">{match.pointChange}</td>
+                  <td class="change-col mono {classifyChange(match.pointChange)}">{match.pointChange}</td>
                   <td class="score-cell">{match.score}</td>
                 </tr>
               {/each}
