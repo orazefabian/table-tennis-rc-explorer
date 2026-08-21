@@ -1,3 +1,18 @@
+// Tracks whether the user has navigated within the app since the page loaded.
+// window.history.length cannot answer this: it counts the browser's own
+// starting entry, so it is already > 1 in a fresh tab opened on a shared link,
+// and going "back" from there leaves the app entirely.
+let inAppNavigations = 0;
+
+/** True when history.back() is guaranteed to land on another in-app view. */
+export function hasInAppHistory() {
+  return inAppNavigations > 0;
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('hashchange', () => { inAppNavigations++; });
+}
+
 function createRouter() {
   let _hash = window.location.hash || '#/search';
   const listeners = new Set();

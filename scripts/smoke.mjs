@@ -123,6 +123,33 @@ await step('event page', async () => {
 });
 
 // --- Unknown player shows a friendly error (iteration 1 fix) ---
+// --- A deep-linked event must not send the user out of the app ---
+await step('deep-linked back button', async () => {
+  const fresh = await browser.newPage();
+  try {
+    await fresh.goto(`${BASE}/#/event/60476/${PLAYER}`);
+    await fresh.waitForSelector('.event-player-card', { timeout: 30000 });
+    await fresh.click('.back-btn');
+    await fresh.waitForTimeout(1500);
+    check('Back from a shared event link stays in the app',
+      fresh.url().includes(`#/player/${PLAYER}`), fresh.url());
+  } finally {
+    await fresh.close();
+  }
+});
+
+// --- Short queries explain themselves ---
+await step('short query hint', async () => {
+  await page.goto(`${BASE}/#/search`);
+  await page.waitForSelector('.search-box input', { timeout: 30000 });
+  await page.fill('.search-box input', 'a');
+  await page.waitForTimeout(400);
+  const hint = await page.textContent('.hint').catch(() => '');
+  check('a one-character query explains the minimum', !!hint && hint.trim().length > 0, String(hint));
+  check('search button is disabled below the minimum',
+    await page.locator('.search-box button').isDisabled());
+});
+
 // --- Keyboard accessibility ---
 await step('keyboard access', async () => {
   await page.goto(`${BASE}/#/search?q=Oraze`);

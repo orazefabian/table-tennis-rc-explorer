@@ -1,5 +1,6 @@
 <script>
   import { getEventDetails } from '../lib/api.js';
+  import { hasInAppHistory } from '../lib/router.js';
   import { t } from '../lib/i18n.js';
   import { classifyChange, formatScore } from '../lib/utils.js';
 
@@ -23,8 +24,11 @@
   });
 
   function goBack() {
-    if (window.history.length > 1) window.history.back();
-    else window.location.hash = '/search';
+    // Going back is only safe once the user has moved around inside the app;
+    // otherwise (a shared link opened directly) fall back to this event's
+    // player, which is the view this page belongs to.
+    if (hasInAppHistory()) window.history.back();
+    else window.location.hash = playerId ? `/player/${playerId}` : '/search';
   }
 
   let wins = $derived(event?.matches?.filter(m => m.result === 'W').length ?? 0);

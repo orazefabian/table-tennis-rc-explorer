@@ -99,6 +99,10 @@
     </div>
   </div>
 
+  {#if query.length > 0 && query.trim().length < 2}
+    <div class="hint">{$t.searchMinChars}</div>
+  {/if}
+
   {#if error}
     <div class="error">{error}</div>
   {/if}
