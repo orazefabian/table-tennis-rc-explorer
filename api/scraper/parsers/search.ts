@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import type { PlayerSearchResult } from '../types.js';
+import { extractPlayerId } from './util.js';
 
 function parsePlayerRows(html: string): PlayerSearchResult[] {
   const $ = cheerio.load(html);
@@ -10,9 +11,7 @@ function parsePlayerRows(html: string): PlayerSearchResult[] {
       const rating = $(cells[0]).text().replace(/\u200B/g, '').trim();
       const nameLink = $(cells[1]).find('a');
       const playerName = nameLink.text().trim();
-      const href = nameLink.attr('href') || '';
-      const idMatch = href.match(/PlayerID=(\d+)/);
-      const id = idMatch ? idMatch[1] : '';
+      const id = extractPlayerId(nameLink.attr('href') || '');
       const lastPlayed = $(cells[3]).text().replace(/\u200B/g, '').trim();
       if (playerName && id) players.push({ id, name: playerName, rating, lastPlayed });
     }

@@ -56,6 +56,9 @@ const translations = {
     seasonNoMatches: 'No matches in this season',
     seasonFrom: 'From',
     seasonTo: 'To',
+    seasonVsStronger: 'vs. Stronger',
+    seasonVsWeaker: 'vs. Weaker',
+    seasonStrengthNote: 'Compared to the opponent\u2019s rating at the time of the match',
 
     // Event page
     back: '← Back',
@@ -150,6 +153,9 @@ const translations = {
     seasonNoMatches: 'Keine Spiele in dieser Saison',
     seasonFrom: 'Von',
     seasonTo: 'Bis',
+    seasonVsStronger: 'gg. Stärkere',
+    seasonVsWeaker: 'gg. Schwächere',
+    seasonStrengthNote: 'Verglichen mit der Wertung des Gegners zum Zeitpunkt des Spiels',
 
     // Event page
     back: '← Zurück',

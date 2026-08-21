@@ -1,7 +1,7 @@
 <script>
   import { t } from '../lib/i18n.js';
-  import { classifyChange } from '../lib/utils.js';
-  let { matches = [] } = $props();
+  import { classifyChange, formatScore } from '../lib/utils.js';
+  let { matches = [], playerId = '' } = $props();
 
   let filterOpponent = $state('');
   let filterResult = $state('all');
@@ -53,7 +53,13 @@
       <tbody>
         {#each filtered as match, i (i)}
           <tr class:win={match.result === 'W'} class:loss={match.result === 'L'}>
-            <td class="date-cell hide-mobile">{match.date}</td>
+            <td class="date-cell hide-mobile">
+              {#if match.eventId && playerId}
+                <a href="#/event/{match.eventId}/{playerId}" class="event-link">{match.date}</a>
+              {:else}
+                {match.date}
+              {/if}
+            </td>
             <td class="opponent-cell">
               {#if match.opponentId}
                 <a href="#/player/{match.opponentId}">{match.opponent}</a>
@@ -71,7 +77,7 @@
             <td class="change-cell" class:positive={classifyChange(match.pointChange) === 'positive'} class:negative={classifyChange(match.pointChange) === 'negative'}>
               {match.pointChange}
             </td>
-            <td class="score-cell">{match.score}</td>
+            <td class="score-cell">{formatScore(match.score, match.result)}</td>
           </tr>
         {/each}
       </tbody>

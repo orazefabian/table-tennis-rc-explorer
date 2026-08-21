@@ -4,14 +4,33 @@
   import { t } from "../lib/i18n.js";
   import { onDestroy } from "svelte";
 
-  let query = $state("");
+  // The query lives in the URL (#/search?q=…) so results survive a reload and
+  // come back when returning from a player page via the browser's Back button.
+  let { query: urlQuery = "" } = $props();
+
+  let query = $state(urlQuery);
   let results = $state([]);
   let loading = $state(false);
   let error = $state("");
   let searched = $state(false);
 
   let debounceTimer;
+  // Guards against a slower earlier search overwriting a newer one's results.
+  let searchId = 0;
+  // The query currently reflected in the URL, so we only rewrite it on change.
+  let syncedQuery = urlQuery;
+
   onDestroy(() => clearTimeout(debounceTimer));
+
+  // Re-run whenever the URL query changes (Back/Forward, reload, shared link).
+  $effect(() => {
+    if (urlQuery === syncedQuery) return;
+    syncedQuery = urlQuery;
+    query = urlQuery;
+    clearTimeout(debounceTimer);
+    if (urlQuery.trim().length >= 2) doSearch({ updateUrl: false });
+    else { results = []; searched = false; error = ""; }
+  });
 
   function handleInput(e) {
     query = e.target.value;
@@ -21,19 +40,30 @@
     }
   }
 
-  async function doSearch() {
+  async function doSearch({ updateUrl = true } = {}) {
     const q = query.trim();
     if (q.length < 2) return;
+
+    if (updateUrl && q !== syncedQuery) {
+      syncedQuery = q;
+      // replaceState keeps typing from stacking one history entry per keystroke.
+      window.history.replaceState(null, "", `#/search?q=${encodeURIComponent(q)}`);
+    }
+
+    const thisSearch = ++searchId;
     loading = true;
     error = "";
     searched = true;
     try {
-      results = await searchPlayers(q);
+      const found = await searchPlayers(q);
+      if (thisSearch !== searchId) return;
+      results = found;
     } catch (e) {
+      if (thisSearch !== searchId) return;
       error = e.message;
       results = [];
     }
-    loading = false;
+    if (thisSearch === searchId) loading = false;
   }
 
   function handleKeydown(e) {
@@ -42,6 +72,8 @@
       doSearch();
     }
   }
+
+  if (urlQuery.trim().length >= 2) doSearch({ updateUrl: false });
 
   function goToPlayer(id) {
     navigate(`/player/${id}`);
@@ -61,7 +93,7 @@
         onkeydown={handleKeydown}
         autofocus
       />
-      <button onclick={doSearch} disabled={loading || query.trim().length < 2}>
+      <button onclick={() => doSearch()} disabled={loading || query.trim().length < 2}>
         {loading ? "…" : $t.search}
       </button>
     </div>

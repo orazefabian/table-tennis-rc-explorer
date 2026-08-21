@@ -1,38 +1,52 @@
 const BASE = '/api';
 
-export async function searchPlayers(name) {
-  const res = await fetch(`${BASE}/search?name=${encodeURIComponent(name)}`);
-  if (!res.ok) throw new Error('Search failed');
+/**
+ * Fetch JSON from the API, preferring the server's own error message.
+ *
+ * The API reports why a request failed (e.g. "Player not found"); showing that
+ * is more useful than a generic per-endpoint fallback.
+ */
+async function getJson(url, fallbackMessage) {
+  let res;
+  try {
+    res = await fetch(url);
+  } catch {
+    throw new Error('Network error — check your connection');
+  }
+  if (!res.ok) {
+    let message = fallbackMessage;
+    try {
+      const body = await res.json();
+      if (body?.error) message = body.error;
+    } catch {
+      // Non-JSON error body; keep the fallback.
+    }
+    throw new Error(message);
+  }
   return res.json();
+}
+
+export async function searchPlayers(name) {
+  return getJson(`${BASE}/search?name=${encodeURIComponent(name)}`, 'Search failed');
 }
 
 export async function getPlayerInfo(id) {
-  const res = await fetch(`${BASE}/player/${id}`);
-  if (!res.ok) throw new Error('Failed to load player info');
-  return res.json();
+  return getJson(`${BASE}/player/${id}`, 'Failed to load player info');
 }
 
 export async function getPlayerHistory(id) {
-  const res = await fetch(`${BASE}/player/${id}/history`);
-  if (!res.ok) throw new Error('Failed to load history');
-  return res.json();
+  return getJson(`${BASE}/player/${id}/history`, 'Failed to load history');
 }
 
 export async function getPlayerMatches(id) {
-  const res = await fetch(`${BASE}/player/${id}/matches`);
-  if (!res.ok) throw new Error('Failed to load matches');
-  return res.json();
+  return getJson(`${BASE}/player/${id}/matches`, 'Failed to load matches');
 }
 
 export async function getEventDetails(eventId, playerId) {
   const url = playerId ? `${BASE}/event/${eventId}?playerID=${playerId}` : `${BASE}/event/${eventId}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('Failed to load event details');
-  return res.json();
+  return getJson(url, 'Failed to load event details');
 }
 
 export async function getEventNames(eventIds) {
-  const res = await fetch(`${BASE}/events/names?ids=${eventIds.join(',')}`);
-  if (!res.ok) throw new Error('Failed to load event names');
-  return res.json();
+  return getJson(`${BASE}/events/names?ids=${eventIds.join(',')}`, 'Failed to load event names');
 }

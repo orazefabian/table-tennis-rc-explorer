@@ -12,12 +12,33 @@ import {
   parseEventDetail,
   parseEventName,
   isRedisConfigured,
-  initRedis
+  initRedis,
+  UpstreamError
 } from './scraper/index.js';
 
 const app = express();
 
 app.use(cors());
+
+/**
+ * Translate a thrown scrape error into a response.
+ *
+ * A 404 from Ratings Central means the requested player or event does not
+ * exist, which is a client error here — not a server failure. Upstream URLs
+ * are kept out of the response body; they only go to the log.
+ */
+function sendError(res: Response, err: unknown, context: string, notFoundMessage: string): void {
+  console.error(`${context}:`, err);
+  if (err instanceof UpstreamError && err.status === 404) {
+    res.status(404).json({ error: notFoundMessage });
+    return;
+  }
+  if (err instanceof UpstreamError) {
+    res.status(502).json({ error: 'Ratings Central is currently unavailable' });
+    return;
+  }
+  res.status(500).json({ error: 'Something went wrong' });
+}
 
 if (isRedisConfigured) {
   initRedis().then(() => {
@@ -61,8 +82,7 @@ app.get('/api/search', async (req: Request, res: Response): Promise<void> => {
 
     res.json(players);
   } catch (err) {
-    console.error('Search error:', err);
-    res.status(500).json({ error: (err as Error).message });
+    sendError(res, err, 'Search error', 'No players found');
   }
 });
 
@@ -74,8 +94,7 @@ app.get('/api/player/:id', async (req: Request, res: Response): Promise<void> =>
     const info = parsePlayerInfo(html, id);
     res.json(info);
   } catch (err) {
-    console.error('Player info error:', err);
-    res.status(500).json({ error: (err as Error).message });
+    sendError(res, err, 'Player info error', 'Player not found');
   }
 });
 
@@ -87,8 +106,7 @@ app.get('/api/player/:id/history', async (req: Request, res: Response): Promise<
     const history = parsePlayerHistory(html);
     res.json(history);
   } catch (err) {
-    console.error('History error:', err);
-    res.status(500).json({ error: (err as Error).message });
+    sendError(res, err, 'History error', 'Player not found');
   }
 });
 
@@ -100,8 +118,7 @@ app.get('/api/player/:id/matches', async (req: Request, res: Response): Promise<
     const data = parseMatches(html);
     res.json(data);
   } catch (err) {
-    console.error('Matches error:', err);
-    res.status(500).json({ error: (err as Error).message });
+    sendError(res, err, 'Matches error', 'Player not found');
   }
 });
 
@@ -127,8 +144,7 @@ app.get('/api/events/names', async (req: Request, res: Response): Promise<void> 
 
     res.json(cache);
   } catch (err) {
-    console.error('Event names error:', err);
-    res.status(500).json({ error: (err as Error).message });
+    sendError(res, err, 'Event names error', 'Event not found');
   }
 });
 
@@ -145,8 +161,7 @@ app.get('/api/event/:id', async (req: Request, res: Response): Promise<void> => 
     }
     res.json(data);
   } catch (err) {
-    console.error('Event detail error:', err);
-    res.status(500).json({ error: (err as Error).message });
+    sendError(res, err, 'Event detail error', 'Event not found');
   }
 });
 
@@ -157,14 +172,13 @@ app.get('/api/player/:id/graph', async (req: Request, res: Response) => {
     const response = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RCScraper/1.0)' },
     });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) throw new UpstreamError(response.status);
     res.set('Content-Type', 'image/jpeg');
     res.set('Cache-Control', 'public, max-age=300');
     const buffer = await response.arrayBuffer();
     res.send(Buffer.from(buffer));
   } catch (err) {
-    console.error('Graph error:', err);
-    res.status(500).json({ error: (err as Error).message });
+    sendError(res, err, 'Graph error', 'Rating graph not found');
   }
 });
 

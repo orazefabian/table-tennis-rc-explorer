@@ -1,7 +1,7 @@
 <script>
   import { t, lang } from '../lib/i18n.js';
   import { getEventNames } from '../lib/api.js';
-  import { parseScore } from '../lib/utils.js';
+  import { parseSets, parseDate, parseRating } from '../lib/utils.js';
   import { SvelteSet } from 'svelte/reactivity';
   import { SvelteMap } from 'svelte/reactivity';
 
@@ -40,16 +40,6 @@
     if (dateMatch) return dateMatch[1].trim();
     const parenMatch = eventName.match(/^([^()]+)/);
     return parenMatch ? parenMatch[1].trim() : eventName;
-  }
-
-  function parseDate(dateStr) {
-    const parts = dateStr.trim().split(/\s*\/\s*/);
-    if (parts.length === 3) {
-      const [m, d, y] = parts.map(Number);
-      return new Date(y + (y < 100 ? 2000 : 0), m - 1, d);
-    }
-    const d = new Date(dateStr);
-    return isNaN(d.getTime()) ? null : d;
   }
 
   function getSeasonLabel(startYear) {
@@ -127,10 +117,10 @@
       if (m.result === 'W') g.wins++;
       else g.losses++;
 
-      const score = parseScore(m.score);
-      if (score) {
-        g.setsWon += score.setsWon;
-        g.setsLost += score.setsLost;
+      const sets = parseSets(m.score, m.result);
+      if (sets) {
+        g.setsWon += sets.setsWon;
+        g.setsLost += sets.setsLost;
       }
 
       const pc = m.pointChange || '';
@@ -147,21 +137,46 @@
     });
   });
 
+  // Split the season's record by opponent strength. Ratings Central has no
+  // venue or fixture data, so home/away cannot be derived; comparing each
+  // opponent's rating against the player's rating at that same match is the
+  // closest meaningful split the data supports.
+  let strengthSplit = $derived.by(() => {
+    const split = {
+      stronger: { wins: 0, losses: 0 },
+      weaker: { wins: 0, losses: 0 },
+    };
+    for (const m of seasonMatches) {
+      const own = parseRating(m.rating);
+      const opp = parseRating(m.opponentRating);
+      if (!own || !opp) continue;
+      const bucket = opp > own ? split.stronger : split.weaker;
+      if (m.result === 'W') bucket.wins++;
+      else if (m.result === 'L') bucket.losses++;
+    }
+    return split;
+  });
+
+  let hasStrengthSplit = $derived(
+    strengthSplit.stronger.wins + strengthSplit.stronger.losses +
+    strengthSplit.weaker.wins + strengthSplit.weaker.losses > 0
+  );
+
   let totalWins = $derived(seasonMatches.filter(m => m.result === 'W').length);
   let totalLosses = $derived(seasonMatches.filter(m => m.result === 'L').length);
   let totalSetsWon = $derived.by(() => {
     let sum = 0;
     for (const m of seasonMatches) {
-      const score = parseScore(m.score);
-      if (score) sum += score.setsWon;
+      const sets = parseSets(m.score, m.result);
+      if (sets) sum += sets.setsWon;
     }
     return sum;
   });
   let totalSetsLost = $derived.by(() => {
     let sum = 0;
     for (const m of seasonMatches) {
-      const score = parseScore(m.score);
-      if (score) sum += score.setsLost;
+      const sets = parseSets(m.score, m.result);
+      if (sets) sum += sets.setsLost;
     }
     return sum;
   });
@@ -182,28 +197,31 @@
     return total >= 0 ? `+${total}` : `${total}`;
   });
 
-  let currentRating = $derived.by(() => {
-    if (playerCurrentRating) {
-      const match = playerCurrentRating.match(/(\d+(?:\.\d+)?)/);
-      return match ? parseFloat(match[1]) : null;
-    }
-    if (seasonMatches.length === 0) return null;
-    const last = seasonMatches.reduce((a, b) => a._date > b._date ? a : b);
-    const ratingStr = last.rating || '';
-    if (!ratingStr) return null;
-    const match = ratingStr.match(/(\d+(?:\.\d+)?)/);
-    return match ? parseFloat(match[1]) : null;
-  });
-
+  // The rating the player carried into their first match of the season.
+  // Each match row reports the rating the player held at that event, so the
+  // earliest one is the season's starting point. Anchoring to the player's
+  // *current* rating instead would be wrong for every past season.
   let startRating = $derived.by(() => {
     if (seasonMatches.length === 0) return null;
-    if (currentRating === null) return null;
+    const earliest = seasonMatches.reduce((a, b) => (a._date <= b._date ? a : b));
+    const rating = parseRating(earliest.rating);
+    return rating || null;
+  });
+
+  // For the season in progress the player's live rating is the most accurate
+  // endpoint; for completed seasons it is derived from the season's own points.
+  let endRating = $derived.by(() => {
+    if (startRating === null) return null;
+    if (selectedSeason === getSeasonLabel(currentSeasonStart) && playerCurrentRating) {
+      const live = parseRating(playerCurrentRating);
+      if (live) return Math.round(live);
+    }
     if (totalPointChange === null) return null;
     const pcMatch = totalPointChange.match(/([+-]?\d+)/);
     if (!pcMatch) return null;
-    const change = parseInt(pcMatch[1], 10);
-    return Math.round(currentRating - change);
+    return Math.round(startRating + parseInt(pcMatch[1], 10));
   });
+
 </script>
 
 <div class="season-stats">
@@ -233,8 +251,8 @@
           <div class="summary-item">
             <span class="label">{$t.seasonPoints}</span>
             <span class="value" class:positive={totalPointChange.startsWith('+')} class:negative={totalPointChange.startsWith('-')}>{totalPointChange}</span>
-            {#if startRating !== null && currentRating !== null}
-              <span class="rating-range">({Math.round(startRating)} → {Math.round(currentRating)})</span>
+            {#if startRating !== null && endRating !== null}
+              <span class="rating-range">({Math.round(startRating)} → {endRating})</span>
             {/if}
           </div>
         {/if}
@@ -245,6 +263,27 @@
           </div>
         {/if}
       </div>
+
+      {#if hasStrengthSplit}
+        <div class="strength-split" title={$t.seasonStrengthNote}>
+          <div class="split-item">
+            <span class="label">{$t.seasonVsStronger}</span>
+            <span class="value">
+              <span class="positive">{strengthSplit.stronger.wins}W</span>
+              <span class="split-sep">-</span>
+              <span class="negative">{strengthSplit.stronger.losses}L</span>
+            </span>
+          </div>
+          <div class="split-item">
+            <span class="label">{$t.seasonVsWeaker}</span>
+            <span class="value">
+              <span class="positive">{strengthSplit.weaker.wins}W</span>
+              <span class="split-sep">-</span>
+              <span class="negative">{strengthSplit.weaker.losses}L</span>
+            </span>
+          </div>
+        </div>
+      {/if}
 
       <div class="tournament-cards">
         {#each prefixGroups as group (group.name)}
@@ -383,6 +422,46 @@
   .date-range {
     font-size: 0.8rem;
     color: var(--text-secondary, #666);
+  }
+
+  .strength-split {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    padding: 1rem;
+    background: var(--bg-secondary, #f5f5f5);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .strength-split .split-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .strength-split .label {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #666);
+    text-transform: uppercase;
+  }
+
+  .strength-split .value {
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .strength-split .positive {
+    color: #22c55e;
+  }
+
+  .strength-split .negative {
+    color: #ef4444;
+  }
+
+  .strength-split .split-sep {
+    color: var(--text-secondary, #666);
+    margin: 0 0.15rem;
   }
 
   .tournament-cards {

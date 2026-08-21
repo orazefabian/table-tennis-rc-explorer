@@ -1,9 +1,10 @@
 import * as cheerio from 'cheerio';
 import type { RatingChange, EventPlayerMatch, EventDetail, EventPlayerSummary } from '../types.js';
+import { extractPlayerId } from './util.js';
 
 function parseRatingChange(text: string): RatingChange {
   const clean = text.replace(/Rating Change/i, '').replace(/\u200B/g, '').replace(/\s+/g, ' ').trim();
-  const m = clean.match(/([\d.]±[\d.]+)\s*([+−-])\s*([\d.]+)\s*=\s*([\d.]+(?:±[\d.]+)?)/);
+  const m = clean.match(/([\d.]+±[\d.]+)\s*([+−-])\s*([\d.]+)\s*=\s*([\d.]+(?:±[\d.]+)?)/);
   if (m) {
     const sign = m[2] === '+' ? '+' : '−';
     return { initial: m[1], change: sign + m[3], final: m[4] };
@@ -31,9 +32,7 @@ function parseMatches(playerLi: cheerio.Cheerio<any>): EventPlayerMatch[] {
       } else if (group && cls.includes('Opponent')) {
         const a = cur.find('a');
         group.opponentName = a.text().trim() || cur.text().trim();
-        const href = a.attr('href') || '';
-        const idM = href.match(/PlayerID=(\d+)/);
-        group.opponentId = idM ? idM[1] : '';
+        group.opponentId = extractPlayerId(a.attr('href') || '');
       } else if (group && (cls.includes('WinScoreBorder') || cls.includes('LossScoreBorder'))) {
         group.score = cur.text().replace(/\u200B/g, '').trim();
         matches.push(group);
@@ -78,9 +77,7 @@ function parseEventDetail(html: string, eventId: string, playerId?: string | nul
   $('ul.Detailed li.Header.PlayerBorder').each((_, el) => {
     const playerLink = $(el).find('a');
     const playerName = playerLink.text().trim();
-    const href = playerLink.attr('href') || '';
-    const idMatch = href.match(/PlayerID=(\d+)/);
-    const pid = idMatch ? idMatch[1] : '';
+    const pid = extractPlayerId(playerLink.attr('href') || '');
     const ratingLi = $(el).nextAll('li').filter((__, l) => $(l).hasClass('RatingBorder')).first();
     const rc = parseRatingChange(ratingLi.text());
     if (playerName) players.push({ name: playerName, id: pid, ...rc });

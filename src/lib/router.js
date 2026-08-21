@@ -3,12 +3,14 @@ function createRouter() {
   const listeners = new Set();
 
   function computeRoute(h) {
-    const path = h.replace(/^#/, '') || '/search';
+    const raw = h.replace(/^#/, '') || '/search';
+    const [path, queryString] = raw.split('?');
     const playerMatch = path.match(/^\/player\/(\d+)$/);
     if (playerMatch) return { page: 'player', id: playerMatch[1] };
     const eventMatch = path.match(/^\/event\/(\d+)\/(\d+)$/);
     if (eventMatch) return { page: 'event', eventId: eventMatch[1], playerId: eventMatch[2] };
-    return { page: 'search' };
+    const query = new URLSearchParams(queryString || '').get('q') || '';
+    return { page: 'search', query };
   }
 
   window.addEventListener('hashchange', () => {

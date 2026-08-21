@@ -1,7 +1,7 @@
 <script>
   import { getEventDetails } from '../lib/api.js';
   import { t } from '../lib/i18n.js';
-  import { classifyChange } from '../lib/utils.js';
+  import { classifyChange, formatScore } from '../lib/utils.js';
 
   let { eventId, playerId } = $props();
 
@@ -106,7 +106,7 @@
                   </td>
                   <td class="rating-col mono">{match.oppRating}</td>
                   <td class="change-col mono {classifyChange(match.pointChange)}">{match.pointChange}</td>
-                  <td class="score-cell">{match.score}</td>
+                  <td class="score-cell">{formatScore(match.score, match.result)}</td>
                 </tr>
               {/each}
             </tbody>

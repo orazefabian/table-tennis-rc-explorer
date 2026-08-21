@@ -6,12 +6,14 @@
 
   function parseHash() {
     const hash = window.location.hash;
-    const path = hash.replace(/^#/, '') || '/search';
+    const raw = hash.replace(/^#/, '') || '/search';
+    const [path, queryString] = raw.split('?');
     const pm = path.match(/^\/player\/(\d+)$/);
     if (pm) return { page: 'player', id: pm[1] };
     const em = path.match(/^\/event\/(\d+)\/(\d+)$/);
     if (em) return { page: 'event', eventId: em[1], playerId: em[2] };
-    return { page: 'search' };
+    const query = new URLSearchParams(queryString || '').get('q') || '';
+    return { page: 'search', query };
   }
 
   let current = $state(parseHash());
@@ -48,7 +50,7 @@
     {:else if current.page === 'event'}
       <Event eventId={current.eventId} playerId={current.playerId} />
     {:else}
-      <Search />
+      <Search query={current.query} />
     {/if}
   </main>
 

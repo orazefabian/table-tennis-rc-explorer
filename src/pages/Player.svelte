@@ -133,7 +133,7 @@
           <HistoryTable {history} playerId={player.id} />
         </div>
       {:else if activeTab === 'matches'}
-        <MatchTable {matches} />
+        <MatchTable {matches} playerId={player.id} />
       {:else if activeTab === 'h2h'}
         <HeadToHead data={headToHead} />
       {/if}
