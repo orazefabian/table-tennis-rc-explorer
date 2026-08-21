@@ -19,28 +19,36 @@
   let error = $state('');
   let activeTab = $state('overview');
 
-  async function loadData() {
+  // Guards against a slower earlier load landing after a newer one and
+  // rendering the previous player's data under the current player's name —
+  // easy to trigger by clicking through opponent links quickly.
+  let loadId = 0;
+
+  async function loadData(id) {
+    const thisLoad = ++loadId;
     loading = true;
     error = '';
     try {
       const [info, hist, matchData] = await Promise.all([
-        getPlayerInfo(playerId),
-        getPlayerHistory(playerId),
-        getPlayerMatches(playerId),
+        getPlayerInfo(id),
+        getPlayerHistory(id),
+        getPlayerMatches(id),
       ]);
+      if (thisLoad !== loadId) return;
       player = info;
       history = hist;
       matches = matchData.matches;
       headToHead = matchData.headToHead;
     } catch (e) {
+      if (thisLoad !== loadId) return;
       error = e.message;
+      player = null;
     }
     loading = false;
   }
 
   $effect(() => {
-    playerId;
-    loadData();
+    loadData(playerId);
   });
 
   function goBack() {

@@ -125,7 +125,9 @@
           {#each results as player (player.id)}
             <tr class="clickable" onclick={() => goToPlayer(player.id)}>
               <td class="rating-cell">{player.rating}</td>
-              <td class="name-cell">{player.name}</td>
+              <td class="name-cell">
+                <a href="#/player/{player.id}" onclick={(e) => e.stopPropagation()}>{player.name}</a>
+              </td>
               <td class="id-cell">{player.id}</td>
               <td class="date-cell hide-mobile">{player.lastPlayed}</td>
             </tr>

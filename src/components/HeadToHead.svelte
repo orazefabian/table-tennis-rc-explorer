@@ -25,6 +25,12 @@
     else { sortBy = col; sortDir = 'desc'; }
   }
 
+  // Communicates the current sort to assistive technology.
+  function ariaSort(col) {
+    if (sortBy !== col) return 'none';
+    return sortDir === 'asc' ? 'ascending' : 'descending';
+  }
+
   function getSortIcon(col) {
     if (sortBy !== col) return '';
     return sortDir === 'asc' ? ' ↑' : ' ↓';
@@ -41,11 +47,31 @@
       <table>
         <thead>
           <tr>
-            <th class="sortable" onclick={() => toggleSort('name')}>{$t.colOpponent}{getSortIcon('name')}</th>
-            <th class="sortable" onclick={() => toggleSort('matches')}>{$t.colMatches}{getSortIcon('matches')}</th>
-            <th class="sortable" onclick={() => toggleSort('wins')}>{$t.colWins}{getSortIcon('wins')}</th>
-            <th class="sortable" onclick={() => toggleSort('losses')}>{$t.colLosses}{getSortIcon('losses')}</th>
-            <th class="sortable" onclick={() => toggleSort('winPct')}>{$t.colWinPct}{getSortIcon('winPct')}</th>
+            <th aria-sort={ariaSort('name')}>
+              <button type="button" class="sortable" onclick={() => toggleSort('name')}>
+                {$t.colOpponent}{getSortIcon('name')}
+              </button>
+            </th>
+            <th aria-sort={ariaSort('matches')}>
+              <button type="button" class="sortable" onclick={() => toggleSort('matches')}>
+                {$t.colMatches}{getSortIcon('matches')}
+              </button>
+            </th>
+            <th aria-sort={ariaSort('wins')}>
+              <button type="button" class="sortable" onclick={() => toggleSort('wins')}>
+                {$t.colWins}{getSortIcon('wins')}
+              </button>
+            </th>
+            <th aria-sort={ariaSort('losses')}>
+              <button type="button" class="sortable" onclick={() => toggleSort('losses')}>
+                {$t.colLosses}{getSortIcon('losses')}
+              </button>
+            </th>
+            <th aria-sort={ariaSort('winPct')}>
+              <button type="button" class="sortable" onclick={() => toggleSort('winPct')}>
+                {$t.colWinPct}{getSortIcon('winPct')}
+              </button>
+            </th>
           </tr>
         </thead>
         <tbody>

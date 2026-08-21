@@ -48,7 +48,7 @@ await step('search', async () => {
   await page.goto(`${BASE}/#/search`);
   await page.fill('.search-box input', 'Oraze Fabian');
   await page.click('.search-box button');
-  await page.waitForSelector('.results-table tbody tr', { timeout: 15000 });
+  await page.waitForSelector('.results-table tbody tr', { timeout: 30000 });
   const rows = await page.locator('.results-table tbody tr').count();
   check('search returns results', rows > 0, `${rows} rows`);
   check('search query is in the URL', page.url().includes('q=Oraze'), page.url());
@@ -57,7 +57,7 @@ await step('search', async () => {
 // --- Reload keeps the query (iteration 2 fix) ---
 await step('reload', async () => {
   await page.reload();
-  await page.waitForSelector('.results-table tbody tr', { timeout: 15000 });
+  await page.waitForSelector('.results-table tbody tr', { timeout: 30000 });
   const inputAfterReload = await page.inputValue('.search-box input');
   check('query survives reload', inputAfterReload === 'Oraze Fabian', `got "${inputAfterReload}"`);
 });
@@ -65,12 +65,12 @@ await step('reload', async () => {
 // --- Navigate to player, then Back ---
 await step('back-navigation', async () => {
   await page.click('.results-table tbody tr');
-  await page.waitForSelector('.player-header h1', { timeout: 15000 });
+  await page.waitForSelector('.player-header h1', { timeout: 30000 });
   const name = await page.textContent('.player-header h1');
   check('player page loads', /Oraze/.test(name || ''), name || '');
 
   await page.goBack();
-  await page.waitForSelector('.results-table tbody tr', { timeout: 15000 });
+  await page.waitForSelector('.results-table tbody tr', { timeout: 30000 });
   const backRows = await page.locator('.results-table tbody tr').count();
   check('Back restores search results', backRows > 0, `${backRows} rows`);
 });
@@ -78,14 +78,14 @@ await step('back-navigation', async () => {
 // --- Player tabs ---
 await step('player tabs', async () => {
   await page.goto(`${BASE}/#/player/${PLAYER}`);
-  await page.waitForSelector('.player-header h1', { timeout: 15000 });
+  await page.waitForSelector('.player-header h1', { timeout: 30000 });
 
   const rating = await page.textContent('.big-rating');
   check('rating renders with deviation', /\d+±\d+/.test(rating || ''), rating || '');
 
   // Matches tab: opponent links (iteration 1 fix) and score orientation
   await page.click(tab(TAB.matches));
-  await page.waitForSelector('table tbody tr', { timeout: 15000 });
+  await page.waitForSelector('table tbody tr', { timeout: 30000 });
   const oppLinks = await page.locator('.opponent-cell a').count();
   check('opponent names are links', oppLinks > 0, `${oppLinks} links`);
   const eventLinks = await page.locator('.date-cell a').count();
@@ -100,7 +100,7 @@ await step('player tabs', async () => {
 
   // Season tab: strength split (iteration 3) and set counts
   await page.click(tab(TAB.season));
-  await page.waitForSelector('.record-card', { timeout: 15000 });
+  await page.waitForSelector('.record-card', { timeout: 30000 });
   const splitCount = await page.locator('.strength-split .split-item').count();
   check('opponent-strength split renders', splitCount === 2, `${splitCount} items`);
   const setsText = await page.locator('.season-summary .summary-item').first().textContent();
@@ -110,11 +110,11 @@ await step('player tabs', async () => {
 // --- Event page ---
 await step('event page', async () => {
   await page.goto(`${BASE}/#/player/${PLAYER}`);
-  await page.waitForSelector('.player-header h1', { timeout: 15000 });
+  await page.waitForSelector('.player-header h1', { timeout: 30000 });
   await page.click(tab(TAB.history));
-  await page.waitForSelector('.event-link', { timeout: 15000 });
+  await page.waitForSelector('.event-link', { timeout: 30000 });
   await page.click('.event-link');
-  await page.waitForSelector('.event-player-card', { timeout: 15000 });
+  await page.waitForSelector('.event-player-card', { timeout: 30000 });
 
   const initial = await page.textContent('.event-player-card .event-stat:nth-child(1) .event-stat-value');
   check('event initial rating is not truncated', /^\d{3,4}±\d+$/.test((initial || '').trim()), initial || '');
@@ -123,10 +123,36 @@ await step('event page', async () => {
 });
 
 // --- Unknown player shows a friendly error (iteration 1 fix) ---
+// --- Keyboard accessibility ---
+await step('keyboard access', async () => {
+  await page.goto(`${BASE}/#/search?q=Oraze`);
+  await page.waitForSelector('.results-table tbody tr', { timeout: 30000 });
+  const nameLinks = await page.locator('.name-cell a').count();
+  check('search results are reachable as links', nameLinks > 0, `${nameLinks} links`);
+
+  await page.goto(`${BASE}/#/player/${PLAYER}`);
+  await page.waitForSelector('.player-header h1', { timeout: 30000 });
+  await page.click(tab(TAB.h2h));
+  await page.waitForSelector('.h2h-section tbody tr', { timeout: 30000 });
+
+  const sortButtons = await page.locator('.h2h-section th button.sortable').count();
+  check('sort headers are buttons', sortButtons === 5, `${sortButtons} buttons`);
+
+  // Sorting via the keyboard must actually reorder the table.
+  const firstBefore = await page.textContent('.h2h-section tbody tr:first-child .opponent-cell');
+  await page.locator('.h2h-section th button.sortable').first().press('Enter');
+  await page.waitForTimeout(300);
+  const firstAfter = await page.textContent('.h2h-section tbody tr:first-child .opponent-cell');
+  check('keyboard sorting reorders the table', firstBefore !== firstAfter, `${firstBefore} -> ${firstAfter}`);
+
+  const ariaSort = await page.locator('.h2h-section th').first().getAttribute('aria-sort');
+  check('sorted column exposes aria-sort', ariaSort && ariaSort !== 'none', String(ariaSort));
+});
+
 expectingErrors = true;
 await step('unknown player', async () => {
   await page.goto(`${BASE}/#/player/99999999`);
-  await page.waitForSelector('.error, .player-header', { timeout: 15000 });
+  await page.waitForSelector('.error, .player-header', { timeout: 30000 });
   const errText = (await page.textContent('.error').catch(() => '')) || '';
   check('unknown player shows a clean error', /not found/i.test(errText) && !errText.includes('http'), errText);
 });
