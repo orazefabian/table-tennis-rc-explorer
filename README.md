@@ -74,6 +74,7 @@ The frontend runs on `http://localhost:5173` and proxies `/api/*` requests to th
 | `npm run build` | Build frontend to `dist/` |
 | `npm run server` | Start Express API server |
 | `npm run lint` | Run ESLint |
+| `npm run smoke` | Browser smoke test (needs `dev:all` running) |
 | `npm run preview` | Preview production build locally |
 
 ## CI / CD

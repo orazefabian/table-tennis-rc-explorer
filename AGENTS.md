@@ -81,6 +81,7 @@ API Endpoints:
 | `npm run dev:all` | Run both concurrently |
 | `npm run build` | Build frontend to `dist/` |
 | `npm run lint` | Run ESLint |
+| `npm run smoke` | Playwright smoke test of the main flows (needs `dev:all` running) |
 | `npm run preview` | Preview production build |
 
 ## Deployment
@@ -96,3 +97,10 @@ API Endpoints:
 - In-memory caching (5 min TTL) for scraped pages
 - Cheerio selectors target `.Bordered` tables and `.Detailed` lists from Ratings Central HTML
 - All scraping logic centralized in `api/scraper/` module
+- Ratings Central writes match scores **winner-first**, so a loss reads `3–1`
+  from the winner's side; use `parseSets`/`formatScore` in `src/lib/utils.js`
+  to get the viewed player's perspective
+- Opponent links in match and event tables are in-page anchors (`#P<id>`), not
+  `PlayerID=` query parameters; use `extractPlayerId` in `api/scraper/parsers/util.ts`
+- Ratings Central exposes no venue, host, or fixture data, so home/away splits
+  are not derivable from this source
