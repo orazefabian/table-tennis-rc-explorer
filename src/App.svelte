@@ -3,6 +3,7 @@
   import Search from './pages/Search.svelte';
   import Player from './pages/Player.svelte';
   import Event from './pages/Event.svelte';
+  import Compare from './pages/Compare.svelte';
 
   function parseHash() {
     const hash = window.location.hash;
@@ -12,6 +13,11 @@
     if (pm) return { page: 'player', id: pm[1] };
     const em = path.match(/^\/event\/(\d+)\/(\d+)$/);
     if (em) return { page: 'event', eventId: em[1], playerId: em[2] };
+    const cm = path.match(/^\/compare\/(\d+)$/);
+    if (cm) {
+      const players = new URLSearchParams(queryString || '').get('players') || '';
+      return { page: 'compare', opponentId: cm[1], playerIds: players.split(',').filter(Boolean) };
+    }
     const query = new URLSearchParams(queryString || '').get('q') || '';
     return { page: 'search', query };
   }
@@ -49,6 +55,8 @@
       <Player playerId={current.id} />
     {:else if current.page === 'event'}
       <Event eventId={current.eventId} playerId={current.playerId} />
+    {:else if current.page === 'compare'}
+      <Compare opponentId={current.opponentId} playerIds={current.playerIds} />
     {:else}
       <Search query={current.query} />
     {/if}

@@ -176,6 +176,57 @@ await step('keyboard access', async () => {
   check('sorted column exposes aria-sort', ariaSort && ariaSort !== 'none', String(ariaSort));
 });
 
+// --- Head-to-head comparison page ---
+await step('comparison page', async () => {
+  await page.goto(`${BASE}/#/player/${PLAYER}`);
+  await page.waitForSelector('.player-header h1', { timeout: 30000 });
+  await page.click(tab(TAB.h2h));
+  await page.waitForSelector('.h2h-section tbody tr', { timeout: 30000 });
+
+  const firstRow = page.locator('.h2h-section tbody tr').first();
+  const h2hWins = Number(await firstRow.locator('.wins-cell').textContent());
+  const h2hLosses = Number(await firstRow.locator('.losses-cell').textContent());
+  await firstRow.locator('.opponent-cell a').click();
+
+  await page.waitForSelector('.compare-table tbody tr .wins-cell, .compare-table .row-note', { timeout: 30000 });
+  check('opponent link opens the comparison', /#\/compare\/\d+\?players=156683$/.test(page.url()), page.url());
+  const base = page.locator('.compare-table tbody tr.base-row');
+  const wins = Number(await base.locator('.wins-cell').textContent());
+  const losses = Number(await base.locator('.losses-cell').textContent());
+  check('comparison record matches the H2H row', wins === h2hWins && losses === h2hLosses,
+    `H2H ${h2hWins}-${h2hLosses}, comparison ${wins}-${losses}`);
+  check('base player cannot be removed', (await base.locator('.remove-btn').count()) === 0);
+  const listed = await page.locator('.compare-matches').first().locator('tbody tr').count();
+  check('match list shows every match', listed === wins + losses, `${listed} rows`);
+
+  // Add another player through the search box, then remove them again.
+  await page.fill('.compare-add .player-picker input', 'Oraze');
+  await page.waitForSelector('.picker-results button', { timeout: 30000 });
+  await page.locator('.picker-results button').first().click();
+  await page.waitForFunction(() => document.querySelectorAll('.compare-table tbody tr').length === 2);
+  check('added player is in the URL', /players=156683,\d+$/.test(page.url()), page.url());
+
+  await page.reload();
+  await page.waitForFunction(() => document.querySelectorAll('.compare-table tbody tr').length === 2, null, { timeout: 30000 });
+  check('comparison survives reload', true);
+
+  await page.locator('.compare-table .remove-btn').first().click();
+  await page.waitForFunction(() => document.querySelectorAll('.compare-table tbody tr').length === 1);
+  check('removed player leaves the URL', /players=156683$/.test(page.url()), page.url());
+
+  await page.click('.back-btn');
+  await page.waitForSelector('.player-header h1', { timeout: 30000 });
+  check('Back returns to the player page', page.url().endsWith(`#/player/${PLAYER}`), page.url());
+
+  // Searching from the H2H tab opens a comparison against any player.
+  await page.click(tab(TAB.h2h));
+  await page.fill('.h2h-search .player-picker input', 'Oraze Kasimir');
+  await page.waitForSelector('.picker-results button', { timeout: 30000 });
+  await page.locator('.picker-results button').first().click();
+  await page.waitForSelector('.compare-table tbody tr', { timeout: 30000 });
+  check('H2H search opens a comparison', /#\/compare\/\d+\?players=156683$/.test(page.url()), page.url());
+});
+
 expectingErrors = true;
 await step('unknown player', async () => {
   await page.goto(`${BASE}/#/player/99999999`);

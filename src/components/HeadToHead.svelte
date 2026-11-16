@@ -1,6 +1,16 @@
 <script>
   import { t } from '../lib/i18n.js';
-  let { data = [] } = $props();
+  import { navigate } from '../lib/router.js';
+  import PlayerPicker from './PlayerPicker.svelte';
+  let { data = [], playerId = '' } = $props();
+
+  function compareHref(opponentId) {
+    return `#/compare/${opponentId}?players=${playerId}`;
+  }
+
+  function openComparison(p) {
+    navigate(`/compare/${p.id}?players=${playerId}`);
+  }
 
   let sortBy = $state('matches');
   let sortDir = $state('desc');
@@ -40,6 +50,17 @@
 <div class="h2h-section">
   <h3>{$t.h2hTitle}</h3>
 
+  {#if playerId}
+    <div class="h2h-search">
+      <PlayerPicker
+        onpick={openComparison}
+        exclude={[String(playerId)]}
+        placeholder={$t.searchOpponent}
+      />
+      <p class="h2h-hint">{$t.h2hHint}</p>
+    </div>
+  {/if}
+
   {#if sorted.length === 0}
     <div class="empty">{$t.noH2HData}</div>
   {:else}
@@ -78,7 +99,9 @@
           {#each sorted as entry (entry.id || entry.name)}
             <tr>
               <td class="opponent-cell">
-                {#if entry.id}
+                {#if entry.id && playerId}
+                  <a href={compareHref(entry.id)}>{entry.name}</a>
+                {:else if entry.id}
                   <a href="#/player/{entry.id}">{entry.name}</a>
                 {:else}
                   {entry.name}

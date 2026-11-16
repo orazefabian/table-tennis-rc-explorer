@@ -143,7 +143,7 @@
       {:else if activeTab === 'matches'}
         <MatchTable {matches} playerId={player.id} />
       {:else if activeTab === 'h2h'}
-        <HeadToHead data={headToHead} />
+        <HeadToHead data={headToHead} playerId={player.id} />
       {/if}
     </div>
   {/if}

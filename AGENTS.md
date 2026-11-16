@@ -53,7 +53,8 @@ API Endpoints:
 - **`src/pages/Search.svelte`** - Player search page
 - **`src/pages/Player.svelte`** - Player profile with tabs (Overview, History, Matches, H2H)
 - **`src/pages/Event.svelte`** - Event detail page
-- **`src/components/`** - Reusable UI (RatingChart, HistoryTable, MatchTable, HeadToHead)
+- **`src/pages/Compare.svelte`** - Head-to-head comparison: several players' records and matches against one opponent
+- **`src/components/`** - Reusable UI (RatingChart, HistoryTable, MatchTable, HeadToHead, PlayerPicker)
 - **`src/lib/api.js`** - Fetch wrappers for all endpoints
 - **`src/lib/i18n.js`** - EN/DE translations with localStorage persistence
 - **`src/lib/router.js`** - Hash-based client-side router
@@ -62,6 +63,9 @@ API Endpoints:
 - `#/search` - Search page (default)
 - `#/player/:id` - Player profile
 - `#/event/:eventId/:playerId` - Event detail with player context
+- `#/compare/:opponentId?players=<baseId>,<id>,…` - Comparison against one opponent; the first
+  player is the pinned base. Adding/removing players rewrites the URL with `replaceState`
+  (no `hashchange`), so `Compare.svelte` keeps the list locally and resyncs on route changes
 
 ## Tech Stack
 | Layer | Technology |

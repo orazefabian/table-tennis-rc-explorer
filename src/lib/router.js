@@ -24,6 +24,11 @@ function createRouter() {
     if (playerMatch) return { page: 'player', id: playerMatch[1] };
     const eventMatch = path.match(/^\/event\/(\d+)\/(\d+)$/);
     if (eventMatch) return { page: 'event', eventId: eventMatch[1], playerId: eventMatch[2] };
+    const compareMatch = path.match(/^\/compare\/(\d+)$/);
+    if (compareMatch) {
+      const players = new URLSearchParams(queryString || '').get('players') || '';
+      return { page: 'compare', opponentId: compareMatch[1], playerIds: players.split(',').filter(Boolean) };
+    }
     const query = new URLSearchParams(queryString || '').get('q') || '';
     return { page: 'search', query };
   }

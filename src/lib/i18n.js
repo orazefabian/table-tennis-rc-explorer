@@ -100,6 +100,18 @@ const translations = {
     colLosses: 'L',
     colWinPct: 'Win %',
 
+    // Comparison page
+    compareTitle: 'Head-to-head vs.',
+    searchOpponent: 'Search any player to compare against…',
+    h2hHint: 'Click an opponent to see every match against them and compare with other players.',
+    addPlayerToCompare: 'Add a player to the comparison',
+    noMatchesVsOpponent: 'No matches against this opponent',
+    removePlayer: 'Remove',
+    removePlayerNamed: (n) => `Remove ${n} from the comparison`,
+    basePlayer: 'Base',
+    colSets: 'Sets',
+    compareInvalid: 'This comparison link is missing a player.',
+
     // Chart
     chartRating: 'Rating',
     chartUpperBand: 'Rating ±1 SD (upper)',
@@ -197,6 +209,18 @@ const translations = {
     colWins: 'S',
     colLosses: 'N',
     colWinPct: 'Siegquote',
+
+    // Comparison page
+    compareTitle: 'Direkte Duelle gegen',
+    searchOpponent: 'Beliebigen Spieler zum Vergleich suchen…',
+    h2hHint: 'Klicke auf einen Gegner, um alle Spiele gegen ihn zu sehen und mit anderen Spielern zu vergleichen.',
+    addPlayerToCompare: 'Spieler zum Vergleich hinzufügen',
+    noMatchesVsOpponent: 'Keine Spiele gegen diesen Gegner',
+    removePlayer: 'Entfernen',
+    removePlayerNamed: (n) => `${n} aus dem Vergleich entfernen`,
+    basePlayer: 'Basis',
+    colSets: 'Sätze',
+    compareInvalid: 'In diesem Vergleichslink fehlt ein Spieler.',
 
     // Chart
     chartRating: 'Wertung',
