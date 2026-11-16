@@ -6,8 +6,26 @@
 
 {#if history.length === 0}
   <div class="empty">{$t.noRatingHistory}</div>
+{:else if compact}
+  <ul class="event-list">
+    {#each history as entry, i (i)}
+      <li>
+        <svelte:element
+          this={entry.eventId ? 'a' : 'div'}
+          class="event-list-row"
+          href={entry.eventId ? `#/event/${entry.eventId}/${playerId}` : undefined}
+        >
+          <span class="event-list-main">
+            <span class="event-list-name">{entry.eventName}</span>
+            <span class="event-list-meta">{entry.date} · {entry.initialRating} → {entry.finalRating}</span>
+          </span>
+          <span class="event-list-change change-cell" class:positive={classifyChange(entry.change) === 'positive'} class:negative={classifyChange(entry.change) === 'negative'}>{entry.change}</span>
+        </svelte:element>
+      </li>
+    {/each}
+  </ul>
 {:else}
-  <div class="table-wrap" class:compact>
+  <div class="table-wrap">
     <table>
       <thead>
         <tr>

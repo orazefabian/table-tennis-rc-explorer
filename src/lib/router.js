@@ -20,8 +20,8 @@ function createRouter() {
   function computeRoute(h) {
     const raw = h.replace(/^#/, '') || '/search';
     const [path, queryString] = raw.split('?');
-    const playerMatch = path.match(/^\/player\/(\d+)$/);
-    if (playerMatch) return { page: 'player', id: playerMatch[1] };
+    const playerMatch = path.match(/^\/player\/(\d+)(?:\/([a-z0-9]+))?$/);
+    if (playerMatch) return { page: 'player', id: playerMatch[1], tab: playerMatch[2] || 'overview' };
     const eventMatch = path.match(/^\/event\/(\d+)\/(\d+)$/);
     if (eventMatch) return { page: 'event', eventId: eventMatch[1], playerId: eventMatch[2] };
     const compareMatch = path.match(/^\/compare\/(\d+)$/);

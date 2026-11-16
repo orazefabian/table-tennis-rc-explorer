@@ -48,9 +48,40 @@ export function classifyChange(changeStr) {
  */
 export function parseSets(scoreStr, result) {
   const score = parseScore(scoreStr);
-  if (!score) return null;
+  if (!score) {
+    // Per-game scores ("7 4 7 7") carry the set count implicitly.
+    const games = parseGames(scoreStr, result);
+    if (!games) return null;
+    const setsWon = games.filter(g => g.own > g.opp).length;
+    return { setsWon, setsLost: games.length - setsWon };
+  }
   if (result === 'L') return { setsWon: score.setsLost, setsLost: score.setsWon };
   return score;
+}
+
+/**
+ * Per-game points from the viewed player's perspective, e.g. a 3–1 win written
+ * "8 6 -6 10" becomes 11:8, 11:6, 6:11, 12:10.
+ *
+ * Ratings Central lists game scores winner-first as the loser's points in each
+ * game: a plain number is a game the match winner took, a negative number is a
+ * game the match winner lost (and gives the winner's points). Games go to 11,
+ * or two clear points after 10:10. Returns null when the string isn't in that
+ * format (e.g. a set count like "3–1").
+ */
+export function parseGames(scoreStr, result) {
+  if (!scoreStr) return null;
+  const tokens = String(scoreStr).replace(/[−–—]/g, '-').trim().split(/\s+/);
+  if (tokens.length === 0 || !tokens.every(tk => /^-?\d+$/.test(tk))) return null;
+  const games = tokens.map(tk => {
+    const lost = tk.startsWith('-');
+    const n = Math.abs(parseInt(tk, 10));
+    const other = n >= 10 ? n + 2 : 11;
+    // From the match winner's side: [winner points, loser points].
+    return lost ? [n, other] : [other, n];
+  });
+  const viewedLost = result === 'L';
+  return games.map(([w, l]) => (viewedLost ? { own: l, opp: w } : { own: w, opp: l }));
 }
 
 /**
@@ -88,4 +119,41 @@ export function parseDate(dateStr) {
 
   const fallback = new Date(trimmed);
   return isNaN(fallback.getTime()) ? null : fallback;
+}
+
+/**
+ * Split a Ratings Central rating like "3036±128" into its value and deviation.
+ * Returns { value, deviation } with numbers, or null parts when missing.
+ */
+export function splitRating(s) {
+  const m = String(s || '').replace(/​/g, '').match(/(\d+(?:\.\d+)?)\s*(?:±\s*(\d+(?:\.\d+)?))?/);
+  if (!m) return { value: null, deviation: null };
+  return { value: Number(m[1]), deviation: m[2] != null ? Number(m[2]) : null };
+}
+
+const nameTokens = (s) =>
+  String(s || '').toLowerCase().split(/[\s,]+/).filter(Boolean).sort();
+
+/**
+ * True when a search query names exactly this player, in any order:
+ * "Ma Long" and "long ma" both match "Ma, Long", but not "Long, Mark".
+ */
+export function isExactNameMatch(query, playerName) {
+  const q = nameTokens(query);
+  const n = nameTokens(playerName);
+  return q.length > 0 && q.length === n.length && q.every((t, i) => t === n[i]);
+}
+
+/**
+ * Human "x ago" for a past date in the given UI language ("vor 2 Jahren",
+ * "3 months ago"). Returns '' for a missing or unparseable date.
+ */
+export function relativeTimeFrom(date, lang = 'en', now = new Date()) {
+  if (!date) return '';
+  const days = Math.round((now - date) / 86400000);
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' });
+  if (days < 7) return rtf.format(-Math.max(days, 0), 'day');
+  if (days < 60) return rtf.format(-Math.round(days / 7), 'week');
+  if (days < 365) return rtf.format(-Math.round(days / 30.44), 'month');
+  return rtf.format(-Math.round(days / 365.25), 'year');
 }

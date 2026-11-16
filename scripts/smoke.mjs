@@ -27,8 +27,8 @@ async function step(label, fn) {
 }
 
 // Tabs are labelled in the active language, so address them by position.
-const TAB = { overview: 1, season: 2, history: 3, matches: 4, h2h: 5 };
-const tab = n => `.tabs button:nth-child(${n})`;
+const TAB = { overview: 'overview', season: 'season', history: 'history', matches: 'matches', h2h: 'h2h' };
+const tab = key => `.tabs a[data-tab="${key}"]`;
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
@@ -48,8 +48,8 @@ await step('search', async () => {
   await page.goto(`${BASE}/#/search`);
   await page.fill('.search-box input', 'Oraze Fabian');
   await page.click('.search-box button');
-  await page.waitForSelector('.results-table tbody tr', { timeout: 30000 });
-  const rows = await page.locator('.results-table tbody tr').count();
+  await page.waitForSelector('a.result-row', { timeout: 30000 });
+  const rows = await page.locator('a.result-row').count();
   check('search returns results', rows > 0, `${rows} rows`);
   check('search query is in the URL', page.url().includes('q=Oraze'), page.url());
 });
@@ -57,21 +57,21 @@ await step('search', async () => {
 // --- Reload keeps the query (iteration 2 fix) ---
 await step('reload', async () => {
   await page.reload();
-  await page.waitForSelector('.results-table tbody tr', { timeout: 30000 });
+  await page.waitForSelector('a.result-row', { timeout: 30000 });
   const inputAfterReload = await page.inputValue('.search-box input');
   check('query survives reload', inputAfterReload === 'Oraze Fabian', `got "${inputAfterReload}"`);
 });
 
 // --- Navigate to player, then Back ---
 await step('back-navigation', async () => {
-  await page.click('.results-table tbody tr');
+  await page.click('a.result-row');
   await page.waitForSelector('.player-header h1', { timeout: 30000 });
   const name = await page.textContent('.player-header h1');
   check('player page loads', /Oraze/.test(name || ''), name || '');
 
   await page.goBack();
-  await page.waitForSelector('.results-table tbody tr', { timeout: 30000 });
-  const backRows = await page.locator('.results-table tbody tr').count();
+  await page.waitForSelector('a.result-row', { timeout: 30000 });
+  const backRows = await page.locator('a.result-row').count();
   check('Back restores search results', backRows > 0, `${backRows} rows`);
 });
 
@@ -85,13 +85,14 @@ await step('player tabs', async () => {
 
   // Matches tab: opponent links (iteration 1 fix) and score orientation
   await page.click(tab(TAB.matches));
-  await page.waitForSelector('table tbody tr', { timeout: 30000 });
+  await page.waitForSelector('.match-row', { timeout: 30000 });
+  check('matches tab is in the URL', page.url().endsWith(`/player/${PLAYER}/matches`), page.url());
   const oppLinks = await page.locator('.opponent-cell a').count();
   check('opponent names are links', oppLinks > 0, `${oppLinks} links`);
   const eventLinks = await page.locator('.date-cell a').count();
   check('match dates link to events', eventLinks > 0, `${eventLinks} links`);
 
-  const lossScores = await page.locator('tr.loss .score-cell').allTextContents();
+  const lossScores = await page.locator('.match-row.loss .score-cell').allTextContents();
   const badLoss = lossScores.filter(s => {
     const [a, b] = s.split(/[–-]/).map(Number);
     return !isNaN(a) && !isNaN(b) && a > b;
@@ -153,9 +154,15 @@ await step('short query hint', async () => {
 // --- Keyboard accessibility ---
 await step('keyboard access', async () => {
   await page.goto(`${BASE}/#/search?q=Oraze`);
-  await page.waitForSelector('.results-table tbody tr', { timeout: 30000 });
-  const nameLinks = await page.locator('.name-cell a').count();
+  await page.waitForSelector('a.result-row', { timeout: 30000 });
+  const nameLinks = await page.locator('a.result-row[href^="#/player/"]').count();
   check('search results are reachable as links', nameLinks > 0, `${nameLinks} links`);
+
+  // Each whole result row is the link, so Enter on a focused row opens the player.
+  await page.locator('a.result-row').first().focus();
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('.player-header h1', { timeout: 30000 });
+  check('Enter on a result row opens the player', page.url().includes('#/player/'), page.url());
 
   await page.goto(`${BASE}/#/player/${PLAYER}`);
   await page.waitForSelector('.player-header h1', { timeout: 30000 });

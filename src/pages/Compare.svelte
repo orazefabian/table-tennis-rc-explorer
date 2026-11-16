@@ -3,7 +3,8 @@
   import { navigate, hasInAppHistory } from '../lib/router.js';
   import { t } from '../lib/i18n.js';
   import { getPlayerInfo, getPlayerHistory, getPlayerMatches } from '../lib/api.js';
-  import { parseSets, formatScore, classifyChange, parseDate } from '../lib/utils.js';
+  import { parseSets, classifyChange, parseDate } from '../lib/utils.js';
+  import Score from '../components/Score.svelte';
   import PlayerPicker from '../components/PlayerPicker.svelte';
 
   // Compares how several players fared against one opponent.
@@ -267,9 +268,9 @@
                         {/if}
                       </td>
                       <td class="result-cell">
-                        <span class="result-badge" class:win={m.result === 'W'} class:loss={m.result === 'L'}>{m.result}</span>
+                        <span class="result-badge" class:win={m.result === 'W'} class:loss={m.result === 'L'}>{m.result === 'W' ? $t.wonShort : m.result === 'L' ? $t.lostShort : m.result}</span>
                       </td>
-                      <td class="score-cell">{formatScore(m.score, m.result)}</td>
+                      <td><Score score={m.score} result={m.result} /></td>
                       <td class="change-cell" class:positive={classifyChange(m.pointChange) === 'positive'} class:negative={classifyChange(m.pointChange) === 'negative'}>
                         {m.pointChange}
                       </td>

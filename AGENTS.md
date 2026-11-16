@@ -61,7 +61,8 @@ API Endpoints:
 
 ### Routing
 - `#/search` - Search page (default)
-- `#/player/:id` - Player profile
+- `#/player/:id[/:tab]` - Player profile; `:tab` is `matches`, `history`, `season` or `h2h` (none = overview).
+  Switching tabs uses `location.replace`, so Back leaves the profile instead of stepping through tabs
 - `#/event/:eventId/:playerId` - Event detail with player context
 - `#/compare/:opponentId?players=<baseId>,<id>,…` - Comparison against one opponent; the first
   player is the pinned base. Adding/removing players rewrites the URL with `replaceState`
@@ -101,6 +102,11 @@ API Endpoints:
 - In-memory caching (5 min TTL) for scraped pages
 - Cheerio selectors target `.Bordered` tables and `.Detailed` lists from Ratings Central HTML
 - All scraping logic centralized in `api/scraper/` module
+- Many match scores are per-game points (`"8 6 -6 10"`), also winner-first: each number is the
+  loser's points in a game, negative for a game the match winner lost. `parseGames` turns them
+  into per-game scores from the viewed player's side, and `parseSets` falls back to it
+- Wins/losses are coloured blue/orange (`--win`, `--loss` in `app.css`), never green/red, and always
+  carry a W/L label or sign
 - Ratings Central writes match scores **winner-first**, so a loss reads `3–1`
   from the winner's side; use `parseSets`/`formatScore` in `src/lib/utils.js`
   to get the viewed player's perspective
