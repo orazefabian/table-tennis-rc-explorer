@@ -186,34 +186,204 @@ a:hover {
   margin-bottom: 0.75rem;
 }
 
-.results-table-wrap {
-  overflow-x: auto;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+/* Search results: each row is one link, so the whole row is clickable,
+   keyboard-reachable and can be opened in a new tab. */
+.results-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.results-toolbar .results-count {
+  margin-bottom: 0;
+}
+
+.sort-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.chip {
+  min-height: 2.25rem;
+  padding: 0 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
   background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
 }
 
-.results-table {
-  width: 100%;
-  border-collapse: collapse;
+.chip:hover {
+  border-color: var(--text-muted);
 }
 
-.results-table th {
-  background: #f1f5f9;
-  padding: 0.75rem 1rem;
-  text-align: left;
+.chip.active {
+  background: var(--text);
+  border-color: var(--text);
+  color: #fff;
+}
+
+.chip:focus-visible,
+.result-row:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.results-group-label {
+  font-size: 0.75rem;
   font-weight: 600;
-  font-size: 0.8rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: var(--text-muted);
-  border-bottom: 2px solid var(--border);
+  margin: 1.25rem 0 0.5rem;
 }
 
-.results-table td {
-  padding: 0.7rem 1rem;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.95rem;
+.results-list {
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.results-list > li + li,
+.results-list > .result-row + .result-row {
+  border-top: 1px solid var(--border);
+}
+
+.result-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 11rem 8.5rem;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1.25rem;
+  color: var(--text);
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+a.result-row:hover {
+  background: #f0f7ff;
+  text-decoration: none;
+}
+
+.result-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.result-name .name {
+  font-weight: 600;
+  font-size: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-row.exact .name {
+  color: var(--primary-hover);
+}
+
+.result-name .meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.result-rating {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.rating-value {
+  font-weight: 700;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rating-dev {
+  margin-left: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: help;
+}
+
+.rating-bar {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: #eef0f3;
+  overflow: hidden;
+}
+
+.rating-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+}
+
+.result-date {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.result-date .ago {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.result-date .abs {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Loading placeholders in the shape of result rows, so the layout doesn't jump. */
+.result-row.skeleton .sk {
+  display: block;
+  height: 0.9rem;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #eef0f3 25%, #f6f7f9 50%, #eef0f3 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.2s linear infinite;
+}
+
+.sk-name { width: 55%; }
+.sk-rating { width: 70%; }
+.sk-date { width: 60%; justify-self: end; }
+
+@keyframes sk-shimmer {
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-row.skeleton .sk { animation: none; }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Explains why the search button is disabled on a too-short query. */
@@ -224,38 +394,9 @@ a:hover {
   padding: 0.75rem 0;
 }
 
-.clickable {
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.clickable:hover {
-  background: #f0f7ff;
-}
-
 .rating-cell {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-}
-
-.name-cell {
-  font-weight: 500;
-}
-
-/* The whole row is clickable for mouse users, but the name is a real link so
-   the result is keyboard-reachable and can be opened in a new tab. */
-.name-cell a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.name-cell a:hover {
-  text-decoration: underline;
-}
-
-.id-cell {
-  color: var(--text-muted);
-  font-size: 0.85rem;
 }
 
 .date-cell {
@@ -1178,12 +1319,18 @@ button.sortable:focus-visible {
     padding: 0.5rem 0.6rem;
   }
 
-  /* Search results table cells */
-  .results-table th,
-  .results-table td {
-    padding: 0.5rem 0.6rem;
-    font-size: 0.88rem;
+  /* Search results: name on top, rating and date side by side below */
+  .result-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name name"
+      "rating date";
+    row-gap: 0.4rem;
+    padding: 0.75rem 0.9rem;
   }
+  .result-name { grid-area: name; }
+  .result-rating { grid-area: rating; width: 9rem; }
+  .result-date { grid-area: date; }
 
   /* Hide mobile-only hidden columns */
   .hide-mobile {

@@ -29,6 +29,14 @@ const translations = {
     colName: 'Name',
     colId: 'ID',
     colLastPlayed: 'Last Played',
+    exactMatches: 'Exact matches',
+    similarNames: 'Similar names',
+    sortBy: 'Sort by',
+    sortRelevance: 'Relevance',
+    sortRating: 'Rating',
+    sortRecent: 'Recently active',
+    ratingDeviationHint: (d) => `±${d} is the rating's uncertainty: fewer or older games mean a larger range`,
+    lastPlayedLabel: 'Last played',
 
     // Player page
     backToSearch: '← Back to Search',
@@ -139,6 +147,14 @@ const translations = {
     colName: 'Name',
     colId: 'ID',
     colLastPlayed: 'Zuletzt gespielt',
+    exactMatches: 'Exakte Treffer',
+    similarNames: 'Ähnliche Namen',
+    sortBy: 'Sortieren nach',
+    sortRelevance: 'Relevanz',
+    sortRating: 'Wertung',
+    sortRecent: 'Zuletzt aktiv',
+    ratingDeviationHint: (d) => `±${d} ist die Unsicherheit der Wertung: wenige oder alte Spiele bedeuten eine größere Spanne`,
+    lastPlayedLabel: 'Zuletzt gespielt',
 
     // Player page
     backToSearch: '← Zurück zur Suche',
