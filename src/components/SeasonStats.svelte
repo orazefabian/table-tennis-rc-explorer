@@ -5,20 +5,27 @@
   import { SvelteSet } from 'svelte/reactivity';
   import { SvelteMap } from 'svelte/reactivity';
 
-  let { matches = [], playerId, currentRating: playerCurrentRating } = $props();
+  let { matches = [], history = [], playerId, currentRating: playerCurrentRating } = $props();
 
   let eventNames = $state({});
 
   // Request ID prevents a slower in-flight response from overwriting a newer one.
   let nameRequestId = 0;
 
+  // The rating history already names every event the player was rated in, so
+  // only events missing from it are looked up — asking the API for hundreds of
+  // events at once is slow enough to time out, which left raw "Event 63420"
+  // labels on long careers.
   async function loadEventNames() {
-    const uniqueIds = [...new Set(matches.map(m => m.eventId).filter(Boolean))];
-    if (uniqueIds.length === 0) { eventNames = {}; return; }
+    const known = {};
+    for (const e of history) if (e.eventId && e.eventName) known[e.eventId] = e.eventName;
+    eventNames = known;
+    const uniqueIds = [...new Set(matches.map(m => m.eventId).filter(Boolean))].filter(id => !known[id]);
+    if (uniqueIds.length === 0) return;
     const thisId = ++nameRequestId;
     try {
       const names = await getEventNames(uniqueIds);
-      if (thisId === nameRequestId) eventNames = names;
+      if (thisId === nameRequestId) eventNames = { ...names, ...known };
     } catch (e) {
       console.error('Failed to load event names:', e);
     }
@@ -26,6 +33,7 @@
 
   $effect(() => {
     matches;
+    history;
     loadEventNames();
   });
 
@@ -237,16 +245,18 @@
 
     {#if seasonMatches.length > 0}
       <div class="record-card">
-        <div class="record-wins">{totalWins}</div>
-        <div class="record-divider">:</div>
-        <div class="record-losses">{totalLosses}</div>
+        <div class="record-wins">{totalWins}<span class="record-tag">{$t.wonShort}</span></div>
+        <div class="record-divider" aria-hidden="true">:</div>
+        <div class="record-losses"><span class="record-tag">{$t.lostShort}</span>{totalLosses}</div>
       </div>
 
       <div class="season-summary">
-        <div class="summary-item">
-          <span class="label">{$t.seasonSets}</span>
-          <span class="value">{totalSetsWon}:{totalSetsLost}</span>
-        </div>
+        {#if totalSetsWon + totalSetsLost > 0}
+          <div class="summary-item">
+            <span class="label">{$t.seasonSets}</span>
+            <span class="value">{totalSetsWon}:{totalSetsLost}</span>
+          </div>
+        {/if}
         {#if totalPointChange !== null}
           <div class="summary-item">
             <span class="label">{$t.seasonPoints}</span>
@@ -269,17 +279,17 @@
           <div class="split-item">
             <span class="label">{$t.seasonVsStronger}</span>
             <span class="value">
-              <span class="positive">{strengthSplit.stronger.wins}W</span>
-              <span class="split-sep">-</span>
-              <span class="negative">{strengthSplit.stronger.losses}L</span>
+              <span class="positive">{strengthSplit.stronger.wins} {$t.wonShort}</span>
+              <span class="split-sep">·</span>
+              <span class="negative">{strengthSplit.stronger.losses} {$t.lostShort}</span>
             </span>
           </div>
           <div class="split-item">
             <span class="label">{$t.seasonVsWeaker}</span>
             <span class="value">
-              <span class="positive">{strengthSplit.weaker.wins}W</span>
-              <span class="split-sep">-</span>
-              <span class="negative">{strengthSplit.weaker.losses}L</span>
+              <span class="positive">{strengthSplit.weaker.wins} {$t.wonShort}</span>
+              <span class="split-sep">·</span>
+              <span class="negative">{strengthSplit.weaker.losses} {$t.lostShort}</span>
             </span>
           </div>
         </div>
@@ -294,12 +304,14 @@
             <div class="card-stats">
               <div class="stat">
                 <span class="stat-label">{$t.seasonRecord}</span>
-                <span class="stat-value">{group.wins}W - {group.losses}L</span>
+                <span class="stat-value"><span class="positive">{group.wins} {$t.wonShort}</span> · <span class="negative">{group.losses} {$t.lostShort}</span></span>
               </div>
-              <div class="stat">
-                <span class="stat-label">{$t.seasonSets}</span>
-                <span class="stat-value">{group.setsWon}:{group.setsLost}</span>
-              </div>
+              {#if group.setsWon + group.setsLost > 0}
+                <div class="stat">
+                  <span class="stat-label">{$t.seasonSets}</span>
+                  <span class="stat-value">{group.setsWon}:{group.setsLost}</span>
+                </div>
+              {/if}
               {#if group.totalPointChange !== 0}
                 <div class="stat">
                   <span class="stat-label">{$t.seasonPoints}</span>
@@ -335,16 +347,23 @@
   .season-header h3 {
     margin: 0;
     font-size: 1.1rem;
-    color: var(--text-primary, #333);
+    color: var(--text);
   }
 
   .season-header select {
     padding: 0.4rem 0.8rem;
-    border: 1px solid var(--border-color, #ddd);
+    border: 1px solid var(--border);
     border-radius: 4px;
-    background: var(--bg-primary, #fff);
+    background: var(--surface);
     font-size: 0.95rem;
     cursor: pointer;
+  }
+
+  .record-tag {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0.35rem;
+    opacity: 0.8;
   }
 
   .record-card {
@@ -353,7 +372,7 @@
     justify-content: center;
     gap: 0.5rem;
     padding: 1.5rem;
-    background: var(--bg-secondary, #f5f5f5);
+    background: var(--surface-2);
     border-radius: 12px;
     margin-bottom: 1rem;
   }
@@ -361,20 +380,20 @@
   .record-wins {
     font-size: 3rem;
     font-weight: 700;
-    color: #22c55e;
+    color: var(--win);
     line-height: 1;
   }
 
   .record-divider {
     font-size: 2rem;
     font-weight: 600;
-    color: var(--text-secondary, #666);
+    color: var(--text-muted);
   }
 
   .record-losses {
     font-size: 3rem;
     font-weight: 700;
-    color: #ef4444;
+    color: var(--loss);
     line-height: 1;
   }
 
@@ -383,7 +402,7 @@
     flex-wrap: wrap;
     gap: 1rem;
     padding: 1rem;
-    background: var(--bg-secondary, #f5f5f5);
+    background: var(--surface-2);
     border-radius: 8px;
     margin-bottom: 1rem;
   }
@@ -396,7 +415,7 @@
 
   .summary-item .label {
     font-size: 0.75rem;
-    color: var(--text-secondary, #666);
+    color: var(--text-muted);
     text-transform: uppercase;
   }
 
@@ -406,22 +425,22 @@
   }
 
   .summary-item .value.positive {
-    color: #22c55e;
+    color: var(--win);
   }
 
   .summary-item .value.negative {
-    color: #ef4444;
+    color: var(--loss);
   }
 
   .summary-item .rating-range {
     font-size: 0.8rem;
-    color: var(--text-secondary, #666);
+    color: var(--text-muted);
     margin-left: 0.25rem;
   }
 
   .date-range {
     font-size: 0.8rem;
-    color: var(--text-secondary, #666);
+    color: var(--text-muted);
   }
 
   .strength-split {
@@ -429,7 +448,7 @@
     flex-wrap: wrap;
     gap: 2rem;
     padding: 1rem;
-    background: var(--bg-secondary, #f5f5f5);
+    background: var(--surface-2);
     border-radius: 8px;
     margin-bottom: 1rem;
   }
@@ -442,7 +461,7 @@
 
   .strength-split .label {
     font-size: 0.75rem;
-    color: var(--text-secondary, #666);
+    color: var(--text-muted);
     text-transform: uppercase;
   }
 
@@ -452,15 +471,15 @@
   }
 
   .strength-split .positive {
-    color: #22c55e;
+    color: var(--win);
   }
 
   .strength-split .negative {
-    color: #ef4444;
+    color: var(--loss);
   }
 
   .strength-split .split-sep {
-    color: var(--text-secondary, #666);
+    color: var(--text-muted);
     margin: 0 0.15rem;
   }
 
@@ -470,10 +489,10 @@
   }
 
   .tournament-card {
-    border: 1px solid var(--border-color, #e5e5e5);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1rem;
-    background: var(--bg-primary, #fff);
+    background: var(--surface);
     transition: box-shadow 0.2s ease;
   }
 
@@ -494,7 +513,7 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: var(--text-primary, #333);
+    color: var(--text);
   }
 
   .card-stats {
@@ -511,27 +530,27 @@
 
   .stat-label {
     font-size: 0.7rem;
-    color: var(--text-secondary, #888);
+    color: var(--text-muted);
     text-transform: uppercase;
   }
 
   .stat-value {
     font-weight: 500;
-    color: var(--text-primary, #333);
+    color: var(--text);
   }
 
   .stat-value.positive {
-    color: #22c55e;
+    color: var(--win);
   }
 
   .stat-value.negative {
-    color: #ef4444;
+    color: var(--loss);
   }
 
   .empty {
     padding: 2rem;
     text-align: center;
-    color: var(--text-secondary, #888);
+    color: var(--text-muted);
   }
 
 

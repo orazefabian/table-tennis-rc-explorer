@@ -1,6 +1,7 @@
 <script>
   import { searchPlayers } from "../lib/api.js";
   import { t, lang } from "../lib/i18n.js";
+  import { rememberQuery, getRecentPlayers, clearRecentPlayers } from "../lib/recent.js";
   import { splitRating, isExactNameMatch, relativeTimeFrom, parseDate } from "../lib/utils.js";
   import { onDestroy } from "svelte";
 
@@ -17,6 +18,12 @@
   // user keeps typing before the next search fires.
   let resultsQuery = $state("");
   let sortKey = $state("relevance");
+  let recent = $state(getRecentPlayers());
+
+  function clearRecent() {
+    clearRecentPlayers();
+    recent = [];
+  }
 
   // The top of the rating scale the bar is drawn against; world-class players
   // sit a little above 3000, so anything higher simply fills the bar.
@@ -110,6 +117,7 @@
       if (thisSearch !== searchId) return;
       results = found;
       resultsQuery = q;
+      rememberQuery(q);
     } catch (e) {
       if (thisSearch !== searchId) return;
       error = e.message;
@@ -153,6 +161,29 @@
 
   {#if error}
     <div class="error">{error}</div>
+  {/if}
+
+  {#if !searched && !loading && query.trim().length < 2 && recent.length > 0}
+    <section class="recent-players" aria-labelledby="recent-title">
+      <div class="recent-head">
+        <h2 id="recent-title">{$t.recentlyViewed}</h2>
+        <button type="button" class="link-btn" onclick={clearRecent}>{$t.clearRecent}</button>
+      </div>
+      <ul class="results-list">
+        {#each recent as p (p.id)}
+          {@const r = splitRating(p.rating)}
+          <li>
+            <a class="result-row recent-row" href="#/player/{p.id}">
+              <span class="result-name">
+                <span class="name">{p.name}</span>
+                <span class="meta">{p.country ? `${p.country} · ` : ""}ID {p.id}</span>
+              </span>
+              <span class="rating-value">{r.value ?? "–"}{#if r.deviation != null}<span class="rating-dev">±{r.deviation}</span>{/if}</span>
+            </a>
+          </li>
+        {/each}
+      </ul>
+    </section>
   {/if}
 
   {#if loading}

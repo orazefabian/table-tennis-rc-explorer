@@ -1,10 +1,17 @@
 <script>
   import { t } from '../lib/i18n.js';
-  import { classifyChange, formatScore } from '../lib/utils.js';
-  let { matches = [], playerId = '' } = $props();
+  import { classifyChange } from '../lib/utils.js';
+  import Score from './Score.svelte';
+
+  // `history` supplies event names and per-event rating changes for the group
+  // headers. `compact` hides the filters (overview card); `groupLimit` caps
+  // how many tournaments are shown.
+  let { matches = [], history = [], playerId = '', compact = false, groupLimit = 0 } = $props();
 
   let filterOpponent = $state('');
   let filterResult = $state('all');
+  const PAGE = 15;
+  let shownGroups = $state(PAGE);
 
   let filtered = $derived(
     matches.filter(m => {
@@ -15,73 +22,114 @@
     })
   );
 
+  let eventsById = $derived(new Map(history.filter(e => e.eventId).map(e => [e.eventId, e])));
+
+  // Matches arrive newest first; consecutive matches of one event form a group.
+  let groups = $derived.by(() => {
+    const out = [];
+    for (const m of filtered) {
+      const key = `${m.eventId || ''}|${m.date}`;
+      let g = out[out.length - 1];
+      if (!g || g.key !== key) {
+        const ev = m.eventId ? eventsById.get(m.eventId) : null;
+        g = { key, eventId: m.eventId, date: m.date, name: ev?.eventName || '', event: ev, matches: [] };
+        out.push(g);
+      }
+      g.matches.push({
+        ...m,
+        changeClass: classifyChange(m.pointChange),
+      });
+    }
+    return out;
+  });
+
+  let limit = $derived(groupLimit || shownGroups);
+  let visible = $derived(groups.slice(0, limit));
+
   let wins = $derived(matches.filter(m => m.result === 'W').length);
   let losses = $derived(matches.filter(m => m.result === 'L').length);
+
+  $effect(() => {
+    filterOpponent;
+    filterResult;
+    shownGroups = PAGE;
+  });
 </script>
 
-<div class="match-controls">
-  <div class="record">
-    {$t.record} <strong>{wins}W - {losses}L</strong>
-    ({matches.length > 0 ? Math.round(wins / matches.length * 100) : 0}%)
+{#if !compact}
+  <div class="match-controls">
+    <div class="record">
+      {$t.record}
+      <strong><span class="positive">{wins} {$t.wonShort}</span> · <span class="negative">{losses} {$t.lostShort}</span></strong>
+      ({matches.length > 0 ? Math.round(wins / matches.length * 100) : 0} %)
+    </div>
+    <div class="filters">
+      <input type="text" placeholder={$t.filterByOpponent} aria-label={$t.filterByOpponent} bind:value={filterOpponent} />
+      <select bind:value={filterResult} aria-label={$t.colResult}>
+        <option value="all">{$t.filterAll}</option>
+        <option value="wins">{$t.filterWins}</option>
+        <option value="losses">{$t.filterLosses}</option>
+      </select>
+    </div>
   </div>
-  <div class="filters">
-    <input type="text" placeholder={$t.filterByOpponent} bind:value={filterOpponent} />
-    <select bind:value={filterResult}>
-      <option value="all">{$t.filterAll}</option>
-      <option value="wins">{$t.filterWins}</option>
-      <option value="losses">{$t.filterLosses}</option>
-    </select>
-  </div>
-</div>
+{/if}
 
 {#if filtered.length === 0}
   <div class="empty">{$t.noMatchesFound}</div>
 {:else}
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th class="hide-mobile">{$t.colDate}</th>
-          <th>{$t.colOpponent}</th>
-          <th>{$t.colOppRating}</th>
-          <th>{$t.colResult}</th>
-          <th>{$t.colRatingHeader}</th>
-          <th>{$t.colPtChange}</th>
-          <th>{$t.colScore}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each filtered as match, i (i)}
-          <tr class:win={match.result === 'W'} class:loss={match.result === 'L'}>
-            <td class="date-cell hide-mobile">
-              {#if match.eventId && playerId}
-                <a href="#/event/{match.eventId}/{playerId}" class="event-link">{match.date}</a>
+  <div class="match-groups" class:compact>
+    {#each visible as group (group.key)}
+      <section class="match-group">
+        <header class="match-group-head">
+          <div class="match-group-title">
+            <span class="match-group-name">
+              {#if group.eventId && playerId}
+                <a href="#/event/{group.eventId}/{playerId}" class="event-link">{group.name || group.date}</a>
               {:else}
-                {match.date}
+                {group.name || group.date}
               {/if}
-            </td>
-            <td class="opponent-cell">
-              {#if match.opponentId}
-                <a href="#/player/{match.opponentId}">{match.opponent}</a>
+            </span>
+            <span class="match-group-date date-cell">
+              {#if group.eventId && playerId}
+                <a href="#/event/{group.eventId}/{playerId}">{group.date}</a>
               {:else}
-                {match.opponent}
+                {group.date}
               {/if}
-            </td>
-            <td class="rating-cell">{match.opponentRating}</td>
-            <td class="result-cell">
+              {#if group.event}· {group.event.initialRating} → {group.event.finalRating}{/if}
+            </span>
+          </div>
+          {#if group.event?.change}
+            <span class="match-group-delta change-cell" class:positive={classifyChange(group.event.change) === 'positive'} class:negative={classifyChange(group.event.change) === 'negative'}>{group.event.change}</span>
+          {/if}
+        </header>
+        <ul class="match-rows">
+          {#each group.matches as match, i (i)}
+            <li class="match-row" class:win={match.result === 'W'} class:loss={match.result === 'L'}>
               <span class="result-badge" class:win={match.result === 'W'} class:loss={match.result === 'L'}>
-                {match.result}
+                {match.result === 'W' ? $t.wonShort : match.result === 'L' ? $t.lostShort : match.result}
               </span>
-            </td>
-            <td class="rating-cell">{match.rating}</td>
-            <td class="change-cell" class:positive={classifyChange(match.pointChange) === 'positive'} class:negative={classifyChange(match.pointChange) === 'negative'}>
-              {match.pointChange}
-            </td>
-            <td class="score-cell">{formatScore(match.score, match.result)}</td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
+              <span class="match-opponent">
+                <span class="opponent-cell">
+                  {#if match.opponentId}
+                    <a href="#/player/{match.opponentId}">{match.opponent}</a>
+                  {:else}
+                    {match.opponent}
+                  {/if}
+                </span>
+                <span class="match-sub">{match.opponentRating}</span>
+              </span>
+              <Score score={match.score} result={match.result} />
+              <span class="match-change change-cell" class:positive={match.changeClass === 'positive'} class:negative={match.changeClass === 'negative'}>{match.pointChange}</span>
+            </li>
+          {/each}
+        </ul>
+      </section>
+    {/each}
   </div>
-  <div class="results-count">{$t.matchCount(filtered.length)}</div>
+  {#if !groupLimit && groups.length > visible.length}
+    <button type="button" class="show-more" onclick={() => (shownGroups += PAGE)}>{$t.showMore}</button>
+  {/if}
+  {#if !compact}
+    <div class="results-count">{$t.matchCount(filtered.length)}</div>
+  {/if}
 {/if}

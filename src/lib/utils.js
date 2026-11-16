@@ -48,9 +48,40 @@ export function classifyChange(changeStr) {
  */
 export function parseSets(scoreStr, result) {
   const score = parseScore(scoreStr);
-  if (!score) return null;
+  if (!score) {
+    // Per-game scores ("7 4 7 7") carry the set count implicitly.
+    const games = parseGames(scoreStr, result);
+    if (!games) return null;
+    const setsWon = games.filter(g => g.own > g.opp).length;
+    return { setsWon, setsLost: games.length - setsWon };
+  }
   if (result === 'L') return { setsWon: score.setsLost, setsLost: score.setsWon };
   return score;
+}
+
+/**
+ * Per-game points from the viewed player's perspective, e.g. a 3–1 win written
+ * "8 6 -6 10" becomes 11:8, 11:6, 6:11, 12:10.
+ *
+ * Ratings Central lists game scores winner-first as the loser's points in each
+ * game: a plain number is a game the match winner took, a negative number is a
+ * game the match winner lost (and gives the winner's points). Games go to 11,
+ * or two clear points after 10:10. Returns null when the string isn't in that
+ * format (e.g. a set count like "3–1").
+ */
+export function parseGames(scoreStr, result) {
+  if (!scoreStr) return null;
+  const tokens = String(scoreStr).replace(/[−–—]/g, '-').trim().split(/\s+/);
+  if (tokens.length === 0 || !tokens.every(tk => /^-?\d+$/.test(tk))) return null;
+  const games = tokens.map(tk => {
+    const lost = tk.startsWith('-');
+    const n = Math.abs(parseInt(tk, 10));
+    const other = n >= 10 ? n + 2 : 11;
+    // From the match winner's side: [winner points, loser points].
+    return lost ? [n, other] : [other, n];
+  });
+  const viewedLost = result === 'L';
+  return games.map(([w, l]) => (viewedLost ? { own: l, opp: w } : { own: w, opp: l }));
 }
 
 /**

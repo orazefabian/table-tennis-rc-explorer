@@ -27,8 +27,8 @@ async function step(label, fn) {
 }
 
 // Tabs are labelled in the active language, so address them by position.
-const TAB = { overview: 1, season: 2, history: 3, matches: 4, h2h: 5 };
-const tab = n => `.tabs button:nth-child(${n})`;
+const TAB = { overview: 'overview', season: 'season', history: 'history', matches: 'matches', h2h: 'h2h' };
+const tab = key => `.tabs a[data-tab="${key}"]`;
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
@@ -85,13 +85,14 @@ await step('player tabs', async () => {
 
   // Matches tab: opponent links (iteration 1 fix) and score orientation
   await page.click(tab(TAB.matches));
-  await page.waitForSelector('table tbody tr', { timeout: 30000 });
+  await page.waitForSelector('.match-row', { timeout: 30000 });
+  check('matches tab is in the URL', page.url().endsWith(`/player/${PLAYER}/matches`), page.url());
   const oppLinks = await page.locator('.opponent-cell a').count();
   check('opponent names are links', oppLinks > 0, `${oppLinks} links`);
   const eventLinks = await page.locator('.date-cell a').count();
   check('match dates link to events', eventLinks > 0, `${eventLinks} links`);
 
-  const lossScores = await page.locator('tr.loss .score-cell').allTextContents();
+  const lossScores = await page.locator('.match-row.loss .score-cell').allTextContents();
   const badLoss = lossScores.filter(s => {
     const [a, b] = s.split(/[–-]/).map(Number);
     return !isNaN(a) && !isNaN(b) && a > b;

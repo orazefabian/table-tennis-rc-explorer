@@ -2,7 +2,8 @@
   import { getEventDetails } from '../lib/api.js';
   import { hasInAppHistory } from '../lib/router.js';
   import { t } from '../lib/i18n.js';
-  import { classifyChange, formatScore } from '../lib/utils.js';
+  import { classifyChange } from '../lib/utils.js';
+  import Score from '../components/Score.svelte';
 
   let { eventId, playerId } = $props();
 
@@ -70,9 +71,9 @@
         <div class="event-stat">
           <span class="event-stat-label">{$t.statRecord}</span>
           <span class="event-stat-value">
-            <span class="positive">{wins}W</span>
-            &thinsp;/&thinsp;
-            <span class="negative">{losses}L</span>
+            <span class="positive">{wins} {$t.wonShort}</span>
+            ·
+            <span class="negative">{losses} {$t.lostShort}</span>
           </span>
         </div>
       </div>
@@ -99,7 +100,7 @@
               {#each event.matches as match, i (i)}
                 <tr class={match.result === 'W' ? 'row-win' : 'row-loss'}>
                   <td>
-                    <span class="result-badge {match.result === 'W' ? 'win' : 'loss'}">{match.result}</span>
+                    <span class="result-badge {match.result === 'W' ? 'win' : 'loss'}">{match.result === 'W' ? $t.wonShort : $t.lostShort}</span>
                   </td>
                   <td class="player-name-col">
                     {#if match.opponentId}
@@ -110,7 +111,7 @@
                   </td>
                   <td class="rating-col mono">{match.oppRating}</td>
                   <td class="change-col mono {classifyChange(match.pointChange)}">{match.pointChange}</td>
-                  <td class="score-cell">{formatScore(match.score, match.result)}</td>
+                  <td><Score score={match.score} result={match.result} /></td>
                 </tr>
               {/each}
             </tbody>

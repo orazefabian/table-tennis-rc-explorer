@@ -9,8 +9,8 @@
     const hash = window.location.hash;
     const raw = hash.replace(/^#/, '') || '/search';
     const [path, queryString] = raw.split('?');
-    const pm = path.match(/^\/player\/(\d+)$/);
-    if (pm) return { page: 'player', id: pm[1] };
+    const pm = path.match(/^\/player\/(\d+)(?:\/([a-z0-9]+))?$/);
+    if (pm) return { page: 'player', id: pm[1], tab: pm[2] || 'overview' };
     const em = path.match(/^\/event\/(\d+)\/(\d+)$/);
     if (em) return { page: 'event', eventId: em[1], playerId: em[2] };
     const cm = path.match(/^\/compare\/(\d+)$/);
@@ -40,7 +40,11 @@
 <div class="app">
   <header class="header">
     <a href="#/search" class="logo">
-      <span class="logo-icon">🏓</span>
+      <svg class="logo-icon" width="26" height="26" viewBox="0 0 28 28" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" fill="var(--primary)" />
+        <rect x="16" y="16" width="4" height="10" rx="2" transform="rotate(-45 18 21)" fill="var(--text)" />
+        <circle cx="23" cy="6" r="3" fill="var(--loss)" />
+      </svg>
       <span class="logo-text">{$t.appName}</span>
     </a>
     <span class="tagline">{$t.tagline}</span>
@@ -52,7 +56,7 @@
 
   <main class="main">
     {#if current.page === 'player'}
-      <Player playerId={current.id} />
+      <Player playerId={current.id} tab={current.tab} />
     {:else if current.page === 'event'}
       <Event eventId={current.eventId} playerId={current.playerId} />
     {:else if current.page === 'compare'}

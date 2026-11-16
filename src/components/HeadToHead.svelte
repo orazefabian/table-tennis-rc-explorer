@@ -48,7 +48,7 @@
 </script>
 
 <div class="h2h-section">
-  <h3>{$t.h2hTitle}</h3>
+  <h2>{$t.h2hTitle}</h2>
 
   {#if playerId}
     <div class="h2h-search">
@@ -112,7 +112,7 @@
               <td class="losses-cell">{entry.losses}</td>
               <td>
                 <div class="win-bar-container">
-                  <div class="win-bar" style="width: {entry.winPct}%"></div>
+                  <span class="win-bar-track" aria-hidden="true"><span class="win-bar" style="width: {entry.winPct}%"></span></span>
                   <span class="win-pct-label">{entry.winPct}%</span>
                 </div>
               </td>
